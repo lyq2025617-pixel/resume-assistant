@@ -1,0 +1,17 @@
+services:
+  - type: web
+    name: resume-assistant
+    env: python
+    region: oregon
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.0
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      - key: ACCESS_PASSWORD
+        generateValue: true
+      - key: SECRET_KEY
+        generateValue: true
