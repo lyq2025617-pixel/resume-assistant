@@ -83,11 +83,22 @@ templates = Jinja2Templates(env=jinja_env)
 # Initialize Anthropic client (API Key 从环境变量读取，云端部署时配置)
 _api_key = os.environ.get("ANTHROPIC_API_KEY", "")
 _base_url = os.environ.get("ANTHROPIC_BASE_URL", "https://api.anthropic.com")
-MODEL = os.environ.get("ANTHROPIC_MODEL", "claude-sonnet-4-6")
+MODEL = os.environ.get("ANTHROPIC_MODEL", "qwen3.6-plus")
+# 兼容非标准模型名（如 claude-opus-4.6 → claude-opus-4-6）
+_MODEL_MAP = {"claude-opus-4.6": "claude-opus-4-6"}
+if MODEL in _MODEL_MAP:
+    logger.info("Mapping model name: %s → %s", MODEL, _MODEL_MAP[MODEL])
+    MODEL = _MODEL_MAP[MODEL]
+
+import httpx
+_http_client = httpx.Client(
+    trust_env=False,  # 忽略系统代理设置，直连
+)
 
 client = anthropic.Anthropic(
     api_key=_api_key or "dummy-key",
     base_url=_base_url,
+    http_client=_http_client,
 )
 
 
@@ -329,6 +340,19 @@ async def tailor_resume(body: JDRequest, request: Request):
         return JSONResponse(status_code=500, content={"error": str(e)})
 
 
+def _extract_ai_text(msg) -> str:
+    """兼容 Claude 和 Qwen 等不同模型的响应格式。
+    跳过 thinking block（Qwen 的思考过程），只取 text block。"""
+    parts = []
+    for block in msg.content:
+        if type(block).__name__ == 'ThinkingBlock':
+            continue
+        t = getattr(block, 'text', None)
+        if t:
+            parts.append(t)
+    return '\n'.join(p for p in parts if p)
+
+
 @app.post("/api/analyze-jd")
 async def analyze_jd(body: JDRequest, request: Request):
     """分析 JD 并返回结构化数据（关键词、经验要求、职责、匹配建议）"""
@@ -358,8 +382,9 @@ async def analyze_jd(body: JDRequest, request: Request):
 只输出 JSON，不要其他内容。""",
             messages=[{"role": "user", "content": body.jd_text}],
             temperature=0.3,
+            thinking={"type": "disabled"},
         )
-        result = msg.content[0].text
+        result = _extract_ai_text(msg)
         start = result.index("{")
         end = result.rindex("}") + 1
         return json.loads(result[start:end])
