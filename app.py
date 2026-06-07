@@ -6,9 +6,13 @@
 import os
 import json
 import shutil
+import time
+import logging
+import traceback
 import anthropic
 import hashlib
 from pathlib import Path
+from collections import defaultdict
 from fastapi import FastAPI, Request, UploadFile, File, Form
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
@@ -22,6 +26,16 @@ from agents.parseAgent import extract_text_from_pdf
 from agents.optimizeAgent import optimize_resume
 from agents.interviewAgent import generate_questions
 
+# ---- 日志配置 ----
+logger = logging.getLogger("resume-assistant")
+logger.setLevel(logging.INFO)
+if not logger.handlers:
+    handler = logging.StreamHandler()
+    handler.setFormatter(logging.Formatter(
+        "%(asctime)s [%(levelname)s] %(name)s: %(message)s"
+    ))
+    logger.addHandler(handler)
+
 app = FastAPI(title="简历自动更新助手")
 
 BASE_DIR = Path(__file__).parent
@@ -33,6 +47,14 @@ EXAMPLE_FILE = BASE_DIR / "resume_data.example.json"
 ACCESS_PASSWORD = os.environ.get("ACCESS_PASSWORD", "resume2025")
 # Session 加密密钥（Render 部署时设为环境变量）
 SECRET_KEY = os.environ.get("SECRET_KEY", hashlib.sha256(b"resume-assistant-secret").hexdigest())
+
+# ---- 限流配置 ----
+RATE_LIMIT_MAX = int(os.environ.get("RATE_LIMIT_MAX", "30"))       # 每分钟最大请求数
+RATE_LIMIT_WINDOW = 60  # 窗口（秒）
+_rate_limit_store: dict[str, list[float]] = defaultdict(list)
+
+# 请求体大小限制（10 MB）
+MAX_UPLOAD_BYTES = int(os.environ.get("MAX_UPLOAD_BYTES", str(10 * 1024 * 1024)))
 
 # Setup static files and templates
 static_dir = BASE_DIR / "static"
@@ -93,6 +115,58 @@ def require_auth(request: Request):
     if not check_auth(request):
         return RedirectResponse(url="/login", status_code=302)
     return None
+
+
+def _get_client_ip(request: Request) -> str:
+    """获取客户端 IP（考虑代理场景）"""
+    forwarded = request.headers.get("x-forwarded-for")
+    if forwarded:
+        return forwarded.split(",")[0].strip()
+    return request.headers.get("x-real-ip") or request.client.host
+
+
+def _check_rate_limit(ip: str) -> bool:
+    """
+    滑动窗口限流：返回 True 表示允许，False 表示超限。
+    仅对 /api/* 路径生效。
+    """
+    now = time.time()
+    window_start = now - RATE_LIMIT_WINDOW
+    # 清理过期记录
+    _rate_limit_store[ip] = [t for t in _rate_limit_store[ip] if t > window_start]
+    if len(_rate_limit_store[ip]) >= RATE_LIMIT_MAX:
+        return False
+    _rate_limit_store[ip].append(now)
+    return True
+
+
+# ---- 限流中间件 ----
+@app.middleware("http")
+async def rate_limit_middleware(request: Request, call_next):
+    # 仅限制 API 请求，跳过静态文件和页面
+    if request.url.path.startswith("/api/"):
+        ip = _get_client_ip(request)
+        if not _check_rate_limit(ip):
+            logger.warning("Rate limit exceeded for IP: %s", ip)
+            return JSONResponse(
+                status_code=429,
+                content={"error": "请求过于频繁，请稍后重试"}
+            )
+    response = await call_next(request)
+    return response
+
+
+# ---- 请求体大小中间件 ----
+@app.middleware("http")
+async def max_size_middleware(request: Request, call_next):
+    content_length = request.headers.get("content-length")
+    if content_length and int(content_length) > MAX_UPLOAD_BYTES:
+        return JSONResponse(
+            status_code=413,
+            content={"error": "请求体过大，请上传不超过 %d MB 的内容" % (MAX_UPLOAD_BYTES // (1024 * 1024))}
+        )
+    response = await call_next(request)
+    return response
 
 
 # ---- 登录/认证路由（无需认证） ----
@@ -196,6 +270,11 @@ async def upload_resume(request: Request, file: UploadFile = File(...)):
     if not file.filename.endswith(".pdf"):
         return JSONResponse(status_code=400, content={"error": "仅支持 PDF 文件"})
     pdf_bytes = await file.read()
+    if len(pdf_bytes) > MAX_UPLOAD_BYTES:
+        return JSONResponse(
+            status_code=413,
+            content={"error": "文件过大"}
+        )
     try:
         text = extract_text_from_pdf(pdf_bytes)
         return {"text": text, "filename": file.filename}
@@ -222,6 +301,46 @@ async def tailor_resume(body: JDRequest, request: Request):
         result = optimize_resume(client, MODEL, data, body.jd_text)
         return result
     except Exception as e:
+        logger.exception("Tailor endpoint error")
+        return JSONResponse(status_code=500, content={"error": str(e)})
+
+
+@app.post("/api/analyze-jd")
+async def analyze_jd(body: JDRequest, request: Request):
+    """分析 JD 并返回结构化数据（关键词、经验要求、职责、匹配建议）"""
+    auth_redirect = require_auth(request)
+    if auth_redirect:
+        return RedirectResponse(url="/login")
+    if not _api_key or _api_key == "dummy-key":
+        return JSONResponse(
+            status_code=503,
+            content={"error": "服务配置中，AI 功能暂不可用"}
+        )
+    try:
+        msg = client.messages.create(
+            model=MODEL,
+            max_tokens=2048,
+            system="""你是资深技术招聘顾问。请分析用户提供的岗位 JD（Job Description），
+提取关键信息并以 JSON 格式返回。
+
+输出格式：
+{
+  "keywords": ["技能关键词1", "技能关键词2", ...],
+  "experience_required": "经验要求描述（如：3-5年后端开发经验）",
+  "key_responsibilities": ["职责1", "职责2", ...],
+  "match_tips": ["匹配建议1", "匹配建议2", ...]
+}
+
+只输出 JSON，不要其他内容。""",
+            messages=[{"role": "user", "content": body.jd_text}],
+            temperature=0.3,
+        )
+        result = msg.content[0].text
+        start = result.index("{")
+        end = result.rindex("}") + 1
+        return json.loads(result[start:end])
+    except Exception as e:
+        logger.exception("Analyze JD endpoint error")
         return JSONResponse(status_code=500, content={"error": str(e)})
 
 
@@ -244,6 +363,7 @@ async def generate_questions_route(body: QuestionRequest, request: Request):
         questions = generate_questions(client, MODEL, data, body.jd_text)
         return {"questions": questions}
     except Exception as e:
+        logger.exception("Questions endpoint error")
         return JSONResponse(status_code=500, content={"error": str(e)})
 
 
@@ -254,6 +374,21 @@ async def preview_resume(request: Request):
         return auth_redirect
     data = load_data()
     return templates.TemplateResponse(request, "resume_print.html", {"data": data})
+
+
+# ---- 全局异常处理器 ----
+@app.exception_handler(Exception)
+async def global_exception_handler(request: Request, exc: Exception):
+    """捕获所有未处理的异常，返回标准 JSON 错误响应"""
+    tb = traceback.format_exc()
+    logger.error("Unhandled exception on %s %s:\n%s", request.method, request.url.path, tb)
+    return JSONResponse(
+        status_code=500,
+        content={
+            "error": "服务器内部错误",
+            "detail": str(exc),
+        },
+    )
 
 
 if __name__ == "__main__":

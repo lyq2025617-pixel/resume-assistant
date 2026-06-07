@@ -22,9 +22,57 @@
     .type-behavior { background: #fef3c7; color: #b45309; }
     .type-product { background: #d1fae5; color: #065f46; }
     .type-general { background: #ede9fe; color: #6d28d9; }
+
+    /* Toast notification system */
+    .toast { position: fixed; bottom: 24px; right: 24px; padding: 12px 24px; border-radius: 8px; color: white; font-size: 0.875rem; font-weight: 500; z-index: 9999; transform: translateY(20px); opacity: 0; transition: all 0.3s ease; box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
+    .toast.show { transform: translateY(0); opacity: 1; }
+    .toast-success { background: #16a34a; }
+    .toast-error { background: #dc2626; }
+    .toast-info { background: #2563eb; }
+
+    /* PDF text modal */
+    .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 1000; display: flex; align-items: center; justify-content: center; opacity: 0; transition: opacity 0.2s ease; }
+    .modal-overlay.show { opacity: 1; }
+    .modal-overlay.hidden { display: none; }
+    .modal-content { background: white; border-radius: 12px; max-width: 700px; width: 90%; max-height: 80vh; display: flex; flex-direction: column; box-shadow: 0 20px 60px rgba(0,0,0,0.3); }
+    .modal-text { overflow-y: auto; padding: 16px; font-size: 0.8rem; line-height: 1.6; color: #374151; background: #f9fafb; border-radius: 0 0 12px 12px; white-space: pre-wrap; word-break: break-word; }
+
+    /* Spinner */
+    .spinner { display: inline-block; width: 16px; height: 16px; border: 2px solid rgba(255,255,255,0.3); border-top-color: white; border-radius: 50%; animation: spin 0.6s linear infinite; vertical-align: middle; margin-right: 6px; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* JD analysis tags */
+    .jd-tag { display: inline-block; background: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe; border-radius: 9999px; padding: 2px 10px; font-size: 0.75rem; margin: 2px 4px 2px 0; }
+    .jd-tag-hot { background: #fef2f2; color: #dc2626; border-color: #fecaca; }
+
+    /* Inline error */
+    .inline-error { color: #dc2626; font-size: 0.75rem; margin-top: 4px; display: none; }
+    .inline-error.show { display: block; }
+
+    /* Match bar */
+    .match-bar { height: 8px; background: #e5e7eb; border-radius: 4px; overflow: hidden; }
+    .match-fill { height: 100%; border-radius: 4px; transition: width 0.5s ease; }
   </style>
 </head>
 <body class="bg-gray-50 min-h-screen">
+
+<!-- Toast Container -->
+<div id="toast-container"></div>
+
+<!-- PDF Text Modal -->
+<div id="pdf-modal" class="modal-overlay hidden">
+  <div class="modal-content">
+    <div class="flex items-center justify-between p-4 border-b">
+      <h3 class="text-lg font-bold text-gray-800">PDF 文本提取结果</h3>
+      <button onclick="closePdfModal()" class="text-gray-400 hover:text-gray-600 text-xl leading-none">&times;</button>
+    </div>
+    <div class="flex items-center justify-between p-3 border-b bg-gray-50">
+      <span id="pdf-char-count" class="text-xs text-gray-500"></span>
+      <button onclick="copyPdfText()" class="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-medium transition cursor-pointer">复制到剪贴板</button>
+    </div>
+    <div id="pdf-text-content" class="modal-text"></div>
+  </div>
+</div>
 
 <!-- Header -->
 <header class="bg-white shadow-sm border-b">
@@ -33,7 +81,7 @@
       <div class="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center text-white font-bold text-lg">简</div>
       <div>
         <h1 class="text-xl font-bold text-gray-800">简历自动更新助手</h1>
-        <p class="text-sm text-gray-500">编辑简历 → 上传 JD → AI 定制 → 生成面试问题 → 导出 PDF</p>
+        <p class="text-sm text-gray-500">编辑简历 &rarr; 上传 JD &rarr; AI 定制 &rarr; 生成面试问题 &rarr; 导出 PDF</p>
       </div>
     </div>
     <a href="/preview" target="_blank" class="px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg text-sm font-medium text-gray-700 transition">
@@ -60,12 +108,13 @@
       <!-- Upload PDF -->
       <div class="bg-white rounded-xl shadow-sm border p-6 mb-4">
         <h2 class="text-lg font-bold text-gray-800 mb-2">快速导入</h2>
-        <p class="text-xs text-gray-400 mb-3">上传已有 PDF 简历，AI 提取文本后可直接编辑</p>
+        <p class="text-xs text-gray-400 mb-3">上传已有 PDF 简历，AI 提取文本后可以直接编辑</p>
         <div class="flex gap-2">
           <input type="file" id="pdf-upload" accept=".pdf" class="text-sm">
           <button onclick="uploadPdf()" id="upload-btn" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-sm font-medium transition">导入</button>
         </div>
         <p id="upload-status" class="text-xs mt-2 hidden"></p>
+        <div id="upload-error" class="inline-error">上传失败</div>
       </div>
 
       <!-- Personal Info -->
@@ -104,7 +153,7 @@
 
       <!-- Save -->
       <div class="flex gap-4 mt-6">
-        <button onclick="saveData()" class="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition shadow-sm">保存修改</button>
+        <button onclick="saveData()" id="save-btn" class="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition shadow-sm">保存修改</button>
         <a href="/preview" target="_blank" class="px-6 py-3 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium transition shadow-sm text-center no-underline">导出 PDF</a>
       </div>
     </div>
@@ -112,9 +161,12 @@
     <!-- Right: Preview -->
     <div class="lg:sticky lg:top-4 self-start">
       <div class="bg-white rounded-xl shadow-sm border p-6">
-        <h2 class="text-lg font-bold text-gray-800 mb-4">简历预览</h2>
+        <div class="flex items-center justify-between mb-4">
+          <h2 class="text-lg font-bold text-gray-800">简历预览</h2>
+          <span id="preview-status" class="text-xs text-gray-400"></span>
+        </div>
         <div id="preview-area" class="text-sm text-gray-600 space-y-4 max-h-[80vh] overflow-y-auto pr-2">
-          <p class="text-gray-400 text-center py-8">点击"保存修改"后更新预览</p>
+          <p class="text-gray-400 text-center py-8">编辑内容后自动更新预览</p>
         </div>
         <a href="/preview" target="_blank" class="mt-4 block text-center px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg text-sm font-medium text-gray-700 transition">打开完整版预览</a>
       </div>
@@ -131,6 +183,7 @@
         <p class="text-xs text-gray-400 mb-4">粘贴职位描述，AI 将自动定制简历内容</p>
         <textarea id="jd-input" rows="12" class="w-full px-4 py-3 border rounded-lg text-sm resize-none" placeholder="粘贴职位描述..."></textarea>
         <button onclick="tailorResume()" id="tailor-btn" class="mt-4 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition">AI 定制简历</button>
+        <div id="tailor-error" class="inline-error">操作失败</div>
       </div>
       <div id="tailor-result" class="bg-white rounded-xl shadow-sm border p-6 mt-4 hidden">
         <h2 class="text-lg font-bold text-gray-800 mb-4">定制结果</h2>
@@ -153,13 +206,24 @@
 <!-- Tab 3: Interview Questions -->
 <div id="panel-questions" class="max-w-7xl mx-auto px-6 py-6 hidden">
   <div class="bg-white rounded-xl shadow-sm border p-6">
-    <h2 class="text-lg font-bold text-gray-800 mb-2">面试问题生成</h2>
-    <p class="text-xs text-gray-400 mb-4">基于你的简历和目标 JD，生成高概率面试问题（含考察点）</p>
+    <div class="flex items-center justify-between">
+      <div>
+        <h2 class="text-lg font-bold text-gray-800 mb-2">面试问题生成</h2>
+        <p class="text-xs text-gray-400 mb-4">基于你的简历和目标 JD，生成高概率面试问题（含考察点）</p>
+      </div>
+    </div>
     <textarea id="jd-input-q" rows="6" class="w-full px-4 py-3 border rounded-lg text-sm resize-none" placeholder="粘贴职位描述..."></textarea>
-    <button onclick="genQuestions()" id="questions-btn" class="mt-4 px-6 py-3 bg-amber-500 hover:bg-amber-600 text-white rounded-lg font-medium transition">生成面试问题</button>
+    <div class="flex items-center gap-3 mt-4">
+      <button onclick="genQuestions()" id="questions-btn" class="px-6 py-3 bg-amber-500 hover:bg-amber-600 text-white rounded-lg font-medium transition">生成面试问题</button>
+      <button onclick="copyAllQuestions()" id="copy-questions-btn" class="px-4 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg text-sm font-medium transition hidden">复制全部</button>
+    </div>
+    <div id="questions-error" class="inline-error">操作失败</div>
   </div>
   <div id="questions-result" class="bg-white rounded-xl shadow-sm border p-6 mt-4 hidden">
-    <h2 class="text-lg font-bold text-gray-800 mb-4">面试问题清单</h2>
+    <div class="flex items-center justify-between mb-4">
+      <h2 class="text-lg font-bold text-gray-800">面试问题清单</h2>
+      <span id="questions-count" class="text-xs text-gray-500"></span>
+    </div>
     <div id="questions-list" class="space-y-3"></div>
   </div>
 </div>
@@ -168,12 +232,103 @@
 // Global state
 let resumeData = null;
 let tailoredData = null;
+let pdfExtractedText = '';
+let generatedQuestions = [];
+let previewDebounceTimer = null;
+
+// Toast notification system (replaces all alert() calls)
+function showToast(msg, type) {
+  type = type || 'success';
+  var container = document.getElementById('toast-container');
+  var toast = document.createElement('div');
+  toast.className = 'toast toast-' + type;
+  toast.textContent = msg;
+  container.appendChild(toast);
+  requestAnimationFrame(function() {
+    requestAnimationFrame(function() {
+      toast.classList.add('show');
+    });
+  });
+  setTimeout(function() {
+    toast.classList.remove('show');
+    setTimeout(function() { toast.remove(); }, 300);
+  }, 2500);
+}
+
+// Show inline error
+function showInlineError(elementId, msg) {
+  var el = document.getElementById(elementId);
+  if (el) {
+    el.textContent = msg;
+    el.classList.add('show');
+    setTimeout(function() { el.classList.remove('show'); }, 5000);
+  }
+}
+
+// PDF Modal
+function openPdfModal(text) {
+  pdfExtractedText = text;
+  document.getElementById('pdf-text-content').textContent = text;
+  document.getElementById('pdf-char-count').textContent = '共 ' + text.length + ' 字符';
+  var modal = document.getElementById('pdf-modal');
+  modal.classList.remove('hidden');
+  requestAnimationFrame(function() { modal.classList.add('show'); });
+}
+
+function closePdfModal() {
+  var modal = document.getElementById('pdf-modal');
+  modal.classList.remove('show');
+  setTimeout(function() { modal.classList.add('hidden'); }, 200);
+}
+
+function copyPdfText() {
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(pdfExtractedText).then(function() {
+      showToast('已复制到剪贴板');
+    }).catch(function() {
+      fallbackCopy(pdfExtractedText);
+    });
+  } else {
+    fallbackCopy(pdfExtractedText);
+  }
+}
+
+function fallbackCopy(text) {
+  var ta = document.createElement('textarea');
+  ta.value = text;
+  ta.style.position = 'fixed';
+  ta.style.left = '-9999px';
+  document.body.appendChild(ta);
+  ta.select();
+  try {
+    document.execCommand('copy');
+    showToast('已复制到剪贴板');
+  } catch(e) {
+    showToast('复制失败，请手动选择文本', 'error');
+  }
+  document.body.removeChild(ta);
+}
+
+// Close modal on overlay click
+document.getElementById('pdf-modal').addEventListener('click', function(e) {
+  if (e.target === this) closePdfModal();
+});
+
+// Close modal on Escape key
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape') closePdfModal();
+});
 
 // Load data on init
 async function loadData() {
-  const res = await fetch('/api/data');
-  resumeData = await res.json();
-  renderForm();
+  try {
+    const res = await fetch('/api/data');
+    resumeData = await res.json();
+    renderForm();
+    updatePreview();
+  } catch(e) {
+    showToast('加载数据失败: ' + e.message, 'error');
+  }
 }
 
 function switchTab(tab) {
@@ -190,7 +345,7 @@ function switchTab(tab) {
 }
 
 function renderForm() {
-  const d = resumeData.personal_info;
+  var d = resumeData.personal_info;
   document.getElementById('name').value = d.name;
   document.getElementById('phone').value = d.phone;
   document.getElementById('email').value = d.email;
@@ -198,57 +353,60 @@ function renderForm() {
   document.getElementById('signature').value = d.signature || '';
 
   // Skills
-  const skillsEl = document.getElementById('skills-list');
+  var skillsEl = document.getElementById('skills-list');
   skillsEl.innerHTML = '';
-  resumeData.skills.forEach((s, i) => {
-    skillsEl.innerHTML += `<div class="flex gap-2"><input value="${s}" data-skill="${i}" class="flex-1 px-3 py-2 border rounded-lg text-sm"><button onclick="removeSkill(${i})" class="text-red-400 hover:text-red-600 text-sm px-2">×</button></div>`;
+  resumeData.skills.forEach(function(s, i) {
+    skillsEl.innerHTML += '<div class="flex gap-2"><input value="' + s.replace(/"/g, '&quot;') + '" data-skill="' + i + '" class="flex-1 px-3 py-2 border rounded-lg text-sm"><button onclick="removeSkill(' + i + ')" class="text-red-400 hover:text-red-600 text-sm px-2">&times;</button></div>';
   });
 
   // Internship (STAR)
-  const intEl = document.getElementById('internship-list');
+  var intEl = document.getElementById('internship-list');
   intEl.innerHTML = '';
-  resumeData.internship.achievements.forEach((a, i) => {
+  resumeData.internship.achievements.forEach(function(a, i) {
     intEl.innerHTML += renderSTAR('internship', i, a);
   });
 
   // Projects (STAR)
-  const projEl = document.getElementById('projects-list');
+  var projEl = document.getElementById('projects-list');
   projEl.innerHTML = '';
-  resumeData.projects.forEach((p, i) => {
+  resumeData.projects.forEach(function(p, i) {
     projEl.innerHTML += renderProjectSTAR(i, p);
   });
+
+  // Bind real-time preview listeners
+  bindPreviewListeners();
 }
 
 function renderSTAR(section, idx, item) {
-  return `
-    <div class="border rounded-lg p-4 bg-gray-50/50 section-card">
-      <div class="flex items-center justify-between mb-3">
-        <input value="${item.title || ''}" data-${section}="${idx}" data-field="title" class="flex-1 mr-3 px-3 py-1.5 border rounded text-sm font-medium" placeholder="经历标题">
-        <button onclick="remove${section.charAt(0).toUpperCase()+section.slice(1)}(${idx})" class="text-red-400 hover:text-red-600 text-sm px-2">×</button>
-      </div>
-      <div class="grid grid-cols-1 gap-2">
-        <div><span class="star-label">S 情境</span><textarea data-${section}="${idx}" data-field="situation" rows="2" class="w-full mt-1 px-3 py-2 border rounded-lg text-xs resize-none" placeholder="背景与情境...">${item.situation||''}</textarea></div>
-        <div><span class="star-label">T 任务</span><textarea data-${section}="${idx}" data-field="task" rows="2" class="w-full mt-1 px-3 py-2 border rounded-lg text-xs resize-none" placeholder="任务与目标...">${item.task||''}</textarea></div>
-        <div><span class="star-label">A 行动</span><textarea data-${section}="${idx}" data-field="action" rows="3" class="w-full mt-1 px-3 py-2 border rounded-lg text-xs resize-none" placeholder="采取的行动...">${item.action||''}</textarea></div>
-        <div><span class="star-label">R 结果</span><textarea data-${section}="${idx}" data-field="result" rows="2" class="w-full mt-1 px-3 py-2 border rounded-lg text-xs resize-none" placeholder="量化结果...">${item.result||''}</textarea></div>
-      </div>
-    </div>`;
+  return (
+    '<div class="border rounded-lg p-4 bg-gray-50/50 section-card">' +
+    '<div class="flex items-center justify-between mb-3">' +
+    '<input value="' + (item.title||'').replace(/"/g, '&quot;') + '" data-' + section + '="' + idx + '" data-field="title" class="flex-1 mr-3 px-3 py-1.5 border rounded text-sm font-medium" placeholder="经历标题">' +
+    '<button onclick="remove' + section.charAt(0).toUpperCase() + section.slice(1) + '(' + idx + ')" class="text-red-400 hover:text-red-600 text-sm px-2">&times;</button>' +
+    '</div>' +
+    '<div class="grid grid-cols-1 gap-2">' +
+    '<div><span class="star-label">S 情境</span><textarea data-' + section + '="' + idx + '" data-field="situation" rows="2" class="w-full mt-1 px-3 py-2 border rounded-lg text-xs resize-none" placeholder="背景与情境...">' + (item.situation||'') + '</textarea></div>' +
+    '<div><span class="star-label">T 任务</span><textarea data-' + section + '="' + idx + '" data-field="task" rows="2" class="w-full mt-1 px-3 py-2 border rounded-lg text-xs resize-none" placeholder="任务与目标...">' + (item.task||'') + '</textarea></div>' +
+    '<div><span class="star-label">A 行动</span><textarea data-' + section + '="' + idx + '" data-field="action" rows="3" class="w-full mt-1 px-3 py-2 border rounded-lg text-xs resize-none" placeholder="采取的行动...">' + (item.action||'') + '</textarea></div>' +
+    '<div><span class="star-label">R 结果</span><textarea data-' + section + '="' + idx + '" data-field="result" rows="2" class="w-full mt-1 px-3 py-2 border rounded-lg text-xs resize-none" placeholder="量化结果...">' + (item.result||'') + '</textarea></div>' +
+    '</div></div>'
+  );
 }
 
 function renderProjectSTAR(idx, p) {
-  return `
-    <div class="border rounded-lg p-4 bg-gray-50/50 section-card">
-      <div class="flex items-center justify-between mb-2">
-        <input value="${p.name||''}" data-project="${idx}" data-field="name" class="flex-1 mr-3 px-3 py-1.5 border rounded text-sm font-medium">
-        <span class="text-xs text-gray-400">${p.type} · ${p.role}</span>
-      </div>
-      <div class="grid grid-cols-1 gap-2">
-        <div><span class="star-label">S 情境</span><textarea data-project="${idx}" data-field="situation" rows="2" class="w-full mt-1 px-3 py-2 border rounded-lg text-xs resize-none">${p.situation||''}</textarea></div>
-        <div><span class="star-label">T 任务</span><textarea data-project="${idx}" data-field="task" rows="2" class="w-full mt-1 px-3 py-2 border rounded-lg text-xs resize-none">${p.task||''}</textarea></div>
-        <div><span class="star-label">A 行动</span><textarea data-project="${idx}" data-field="action" rows="3" class="w-full mt-1 px-3 py-2 border rounded-lg text-xs resize-none">${p.action||''}</textarea></div>
-        <div><span class="star-label">R 结果</span><textarea data-project="${idx}" data-field="result" rows="2" class="w-full mt-1 px-3 py-2 border rounded-lg text-xs resize-none">${p.result||''}</textarea></div>
-      </div>
-    </div>`;
+  return (
+    '<div class="border rounded-lg p-4 bg-gray-50/50 section-card">' +
+    '<div class="flex items-center justify-between mb-2">' +
+    '<input value="' + (p.name||'').replace(/"/g, '&quot;') + '" data-project="' + idx + '" data-field="name" class="flex-1 mr-3 px-3 py-1.5 border rounded text-sm font-medium">' +
+    '<span class="text-xs text-gray-400">' + p.type + ' &middot; ' + p.role + '</span>' +
+    '</div>' +
+    '<div class="grid grid-cols-1 gap-2">' +
+    '<div><span class="star-label">S 情境</span><textarea data-project="' + idx + '" data-field="situation" rows="2" class="w-full mt-1 px-3 py-2 border rounded-lg text-xs resize-none">' + (p.situation||'') + '</textarea></div>' +
+    '<div><span class="star-label">T 任务</span><textarea data-project="' + idx + '" data-field="task" rows="2" class="w-full mt-1 px-3 py-2 border rounded-lg text-xs resize-none">' + (p.task||'') + '</textarea></div>' +
+    '<div><span class="star-label">A 行动</span><textarea data-project="' + idx + '" data-field="action" rows="3" class="w-full mt-1 px-3 py-2 border rounded-lg text-xs resize-none">' + (p.action||'') + '</textarea></div>' +
+    '<div><span class="star-label">R 结果</span><textarea data-project="' + idx + '" data-field="result" rows="2" class="w-full mt-1 px-3 py-2 border rounded-lg text-xs resize-none">' + (p.result||'') + '</textarea></div>' +
+    '</div></div>'
+  );
 }
 
 function collectFormData() {
@@ -259,22 +417,22 @@ function collectFormData() {
   resumeData.personal_info.signature = document.getElementById('signature').value;
 
   resumeData.skills = [];
-  document.querySelectorAll('[data-skill]').forEach(el => {
+  document.querySelectorAll('[data-skill]').forEach(function(el) {
     resumeData.skills[el.dataset.skill] = el.value;
   });
-  resumeData.skills = resumeData.skills.filter(s => s);
+  resumeData.skills = resumeData.skills.filter(function(s) { return s; });
 
   resumeData.internship.achievements = collectSTAR('internship');
   resumeData.projects = collectProjectSTAR();
 }
 
 function collectSTAR(section) {
-  const items = [];
-  const indices = new Set();
-  document.querySelectorAll(`[data-${section}]`).forEach(el => indices.add(el.dataset[section]));
-  indices.forEach(idx => {
-    const item = { title: '', situation: '', task: '', action: '', result: '' };
-    document.querySelectorAll(`[data-${section}="${idx}"]`).forEach(el => {
+  var items = [];
+  var indices = new Set();
+  document.querySelectorAll('[data-' + section + ']').forEach(function(el) { indices.add(el.dataset[section]); });
+  indices.forEach(function(idx) {
+    var item = { title: '', situation: '', task: '', action: '', result: '' };
+    document.querySelectorAll('[data-' + section + '="' + idx + '"]').forEach(function(el) {
       item[el.dataset.field] = el.value;
     });
     if (item.title || item.action) items.push(item);
@@ -283,14 +441,14 @@ function collectSTAR(section) {
 }
 
 function collectProjectSTAR() {
-  const projects = resumeData.projects;
-  const indices = new Set();
-  document.querySelectorAll('[data-project]').forEach(el => indices.add(el.dataset.project));
-  return Array.from(indices).map(idx => {
-    const p = {...projects[idx]};
-    document.querySelectorAll(`[data-project="${idx}"]`).forEach(el => {
+  var projects = resumeData.projects;
+  var indices = new Set();
+  document.querySelectorAll('[data-project]').forEach(function(el) { indices.add(el.dataset.project); });
+  return Array.from(indices).map(function(idx) {
+    var p = Object.assign({}, projects[idx]);
+    document.querySelectorAll('[data-project="' + idx + '"]').forEach(function(el) {
       if (el.dataset.field === 'name') p.name = el.value;
-      else if (['situation','task','action','result'].includes(el.dataset.field)) p[el.dataset.field] = el.value;
+      else if (['situation','task','action','result'].indexOf(el.dataset.field) !== -1) p[el.dataset.field] = el.value;
     });
     return p;
   });
@@ -299,109 +457,300 @@ function collectProjectSTAR() {
 function removeSkill(i) {
   resumeData.skills.splice(i, 1);
   renderForm();
+  debouncedPreview();
 }
 
 function addSkill() {
   resumeData.skills.push('');
   renderForm();
+  debouncedPreview();
 }
 
 function removeInternship(i) {
   resumeData.internship.achievements.splice(i, 1);
   renderForm();
+  debouncedPreview();
 }
 
 function addInternship() {
   resumeData.internship.achievements.push({ title: '', situation: '', task: '', action: '', result: '' });
   renderForm();
+  debouncedPreview();
 }
 
 async function saveData() {
   collectFormData();
-  const res = await fetch('/api/data', {
-    method: 'POST',
-    headers: {'Content-Type': 'application/json'},
-    body: JSON.stringify({data: resumeData})
-  });
-  const result = await res.json();
-  if (result.status === 'ok') {
-    showToast('保存成功！');
-    updatePreview();
+  var btn = document.getElementById('save-btn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span>保存中...';
+  try {
+    var res = await fetch('/api/data', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({data: resumeData})
+    });
+    var result = await res.json();
+    if (result.status === 'ok') {
+      showToast('保存成功！');
+      updatePreview();
+    } else {
+      showToast('保存失败', 'error');
+    }
+  } catch(e) {
+    showToast('保存失败: ' + e.message, 'error');
   }
+  btn.disabled = false;
+  btn.textContent = '保存修改';
 }
 
-function showToast(msg) {
-  const toast = document.createElement('div');
-  toast.className = 'fixed bottom-6 right-6 bg-green-600 text-white px-6 py-3 rounded-lg shadow-lg text-sm font-medium z-50';
-  toast.textContent = msg;
-  document.body.appendChild(toast);
-  setTimeout(() => toast.remove(), 2000);
+// Real-time preview (debounced, 500ms)
+function debouncedPreview() {
+  var statusEl = document.getElementById('preview-status');
+  statusEl.textContent = '等待更新...';
+  clearTimeout(previewDebounceTimer);
+  previewDebounceTimer = setTimeout(function() {
+    collectFormData();
+    updatePreview();
+    statusEl.textContent = '已更新';
+    setTimeout(function() { statusEl.textContent = ''; }, 1500);
+  }, 500);
+}
+
+function bindPreviewListeners() {
+  var inputs = document.querySelectorAll('#name, #phone, #email, #location, #signature, [data-skill], [data-internship], [data-project]');
+  inputs.forEach(function(el) {
+    el.removeEventListener('input', debouncedPreview);
+    el.addEventListener('input', debouncedPreview);
+  });
 }
 
 function updatePreview() {
-  const d = resumeData;
-  let html = `
-    <div class="text-center border-b pb-4">
-      <h3 class="text-xl font-bold serif">${d.personal_info.name}</h3>
-      <p class="text-blue-600 text-sm italic">"${d.personal_info.signature}"</p>
-      <p class="text-xs text-gray-500 mt-1">${d.personal_info.phone} | ${d.personal_info.email} | ${d.personal_info.location}</p>
-    </div>
-    <div>
-      <h4 class="font-bold text-sm text-gray-800 border-b pb-1 mb-2">教育背景</h4>
-      <p class="text-xs"><b>${d.education.graduate.school}</b> ${d.education.graduate.major}（${d.education.graduate.type}）${d.education.graduate.start}</p>
-      <p class="text-xs"><b>${d.education.undergraduate.school}</b> ${d.education.undergraduate.major} | 排名 ${d.education.undergraduate.rank} | GPA ${d.education.undergraduate.gpa}</p>
-    </div>`;
+  var d = resumeData;
+  if (!d) return;
+  var html = (
+    '<div class="text-center border-b pb-4">' +
+    '<h3 class="text-xl font-bold serif">' + d.personal_info.name + '</h3>' +
+    '<p class="text-blue-600 text-sm italic">&quot;' + d.personal_info.signature + '&quot;</p>' +
+    '<p class="text-xs text-gray-500 mt-1">' + d.personal_info.phone + ' | ' + d.personal_info.email + ' | ' + d.personal_info.location + '</p>' +
+    '</div>' +
+    '<div>' +
+    '<h4 class="font-bold text-sm text-gray-800 border-b pb-1 mb-2">教育背景</h4>' +
+    '<p class="text-xs"><b>' + d.education.graduate.school + '</b> ' + d.education.graduate.major + '（' + d.education.graduate.type + '）' + d.education.graduate.start + '</p>' +
+    '<p class="text-xs"><b>' + d.education.undergraduate.school + '</b> ' + d.education.undergraduate.major + ' | 排名 ' + d.education.undergraduate.rank + ' | GPA ' + d.education.undergraduate.gpa + '</p>' +
+    '</div>'
+  );
+
+  if (d.skills && d.skills.length) {
+    html += '<div><h4 class="font-bold text-sm text-gray-800 border-b pb-1 mb-2">技能</h4><div class="flex flex-wrap gap-1">';
+    d.skills.forEach(function(s) {
+      html += '<span class="metric-badge">' + s + '</span>';
+    });
+    html += '</div></div>';
+  }
 
   if (d.internship && d.internship.achievements.length) {
-    html += `<div><h4 class="font-bold text-sm text-gray-800 border-b pb-1 mb-2">实习经历</h4>`;
-    d.internship.achievements.forEach(a => {
-      html += `<div class="mb-2"><p class="font-medium text-xs">${a.title}</p>`;
-      if (a.result) html += `<p class="text-xs text-blue-600">${a.result}</p>`;
-      html += `</div>`;
+    html += '<div><h4 class="font-bold text-sm text-gray-800 border-b pb-1 mb-2">实习经历</h4>';
+    d.internship.achievements.forEach(function(a) {
+      html += '<div class="mb-2"><p class="font-medium text-xs">' + a.title + '</p>';
+      if (a.result) html += '<p class="text-xs text-blue-600">' + a.result + '</p>';
+      html += '</div>';
     });
-    html += `</div>`;
+    html += '</div>';
+  }
+
+  if (d.projects && d.projects.length) {
+    html += '<div><h4 class="font-bold text-sm text-gray-800 border-b pb-1 mb-2">项目经历</h4>';
+    d.projects.forEach(function(p) {
+      html += '<div class="mb-2"><p class="font-medium text-xs">' + p.name + ' (' + p.role + ')</p>';
+      if (p.result) html += '<p class="text-xs text-blue-600">' + p.result + '</p>';
+      html += '</div>';
+    });
+    html += '</div>';
   }
 
   if (d.competitions && d.competitions.length) {
-    html += `<div><h4 class="font-bold text-sm text-gray-800 border-b pb-1 mb-2">竞赛获奖</h4><p class="text-xs">${d.competitions.slice(0,5).map(c=>`${c.name} ${c.award}`).join('、')}</p></div>`;
+    html += '<div><h4 class="font-bold text-sm text-gray-800 border-b pb-1 mb-2">竞赛获奖</h4><p class="text-xs">' + d.competitions.slice(0,5).map(function(c){ return c.name + ' ' + c.award; }).join('、') + '</p></div>';
   }
 
   document.getElementById('preview-area').innerHTML = html;
 }
 
+// Client-side JD Analysis
+function analyzeJD(jdText) {
+  var result = { keywords: [], skills: [], experience: null, abilities: [], rawText: jdText };
+
+  // Known tech skills/keywords to scan for
+  var techKeywords = [
+    'Python','Java','JavaScript','TypeScript','C++','C','Go','Rust','Ruby','PHP','Swift','Kotlin',
+    'React','Vue','Angular','Node.js','Next.js','Django','Flask','Spring','Express',
+    'MySQL','PostgreSQL','MongoDB','Redis','Elasticsearch','SQLite',
+    'Docker','Kubernetes','AWS','Azure','GCP','Linux','Nginx',
+    'Git','CI/CD','REST API','GraphQL','gRPC','Microservices',
+    'Machine Learning','Deep Learning','NLP','Computer Vision','PyTorch','TensorFlow',
+    'HTML','CSS','Sass','Tailwind','Webpack','Vite',
+    'Agile','Scrum','Kanban','Jira',
+    '数据分析','数据挖掘','机器学习','深度学习','自然语言处理',
+    '前端','后端','全栈','移动端','小程序',
+    'SQL','NoSQL','分布式','高并发','微服务','容器化',
+    '算法','数据结构','操作系统','计算机网络',
+    '产品经理','需求分析','原型设计','Axure','Figma',
+    'PPT','Excel','Word','SQL','Hadoop','Spark','Flink'
+  ];
+
+  var lowerJD = jdText.toLowerCase();
+
+  // Extract matching keywords
+  var foundKeywords = [];
+  var foundSkills = [];
+  techKeywords.forEach(function(kw) {
+    var regex = new RegExp(kw.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i');
+    if (regex.test(jdText)) {
+      if (/[一-龟]/.test(kw)) {
+        foundKeywords.push(kw);
+      } else {
+        foundSkills.push(kw);
+      }
+    }
+  });
+
+  result.skills = foundSkills;
+  result.keywords = foundKeywords;
+
+  // Extract experience requirement
+  var expPatterns = [
+    /(\d+)\+?\s*年.*?(?:经验|工作|从业)/gi,
+    /(?:经验|工作)(\d+)\+?\s*年/gi,
+    /(\d+)\s*-\s*(\d+)\s*年.*?经验/gi,
+    /(\d+)\s*年.*?以上/gi
+  ];
+  for (var i = 0; i < expPatterns.length; i++) {
+    var match = expPatterns[i].exec(jdText);
+    if (match) {
+      result.experience = parseInt(match[1]);
+      break;
+    }
+  }
+
+  // Extract ability requirements (lines with 要求/能力/熟悉/掌握)
+  var abilityLines = [];
+  var lines = jdText.split(/\n/);
+  var abilityPatterns = [/要求/i, /能力/i, /熟悉/i, /掌握/i, /具备/i, /能够/i, /负责/i];
+  lines.forEach(function(line) {
+    var trimmed = line.replace(/^[\s\-\*•‣◦⁃∙▪▫•]+/, '').trim();
+    if (trimmed.length > 4 && trimmed.length < 100) {
+      for (var j = 0; j < abilityPatterns.length; j++) {
+        if (abilityPatterns[j].test(trimmed)) {
+          abilityLines.push(trimmed);
+          break;
+        }
+      }
+    }
+  });
+  result.abilities = abilityLines.slice(0, 10);
+
+  return result;
+}
+
+function renderJDAnalysis(analysis) {
+  var el = document.getElementById('jd-analysis');
+  var html = '';
+
+  if (analysis.experience) {
+    html += '<div class="flex items-center gap-3"><span class="text-sm font-medium text-gray-700">经验要求</span><span class="metric-badge">' + analysis.experience + ' 年</span></div>';
+  }
+
+  if (analysis.skills.length > 0) {
+    html += '<div><h4 class="font-bold text-sm text-gray-700 mb-2">技术关键词</h4><div class="flex flex-wrap">';
+    analysis.skills.forEach(function(s) {
+      html += '<span class="jd-tag">' + s + '</span>';
+    });
+    html += '</div></div>';
+  }
+
+  if (analysis.keywords.length > 0) {
+    html += '<div><h4 class="font-bold text-sm text-gray-700 mb-2">核心关键词</h4><div class="flex flex-wrap">';
+    analysis.keywords.forEach(function(k) {
+      html += '<span class="jd-tag jd-tag-hot">' + k + '</span>';
+    });
+    html += '</div></div>';
+  }
+
+  if (analysis.abilities.length > 0) {
+    html += '<div><h4 class="font-bold text-sm text-gray-700 mb-2">能力要求</h4><ul class="space-y-1">';
+    analysis.abilities.forEach(function(a) {
+      html += '<li class="text-xs text-gray-600 flex items-start gap-2"><span class="text-blue-500 mt-0.5">&bull;</span><span>' + a + '</span></li>';
+    });
+    html += '</ul></div>';
+  }
+
+  // Compute match estimate
+  var resumeSkills = (resumeData && resumeData.skills) ? resumeData.skills.map(function(s) { return s.toLowerCase(); }) : [];
+  var allJDKeywords = analysis.skills.concat(analysis.keywords).map(function(k) { return k.toLowerCase(); });
+  var matchCount = 0;
+  if (allJDKeywords.length > 0) {
+    allJDKeywords.forEach(function(kw) {
+      resumeSkills.forEach(function(rs) {
+        if (rs.indexOf(kw) !== -1 || kw.indexOf(rs) !== -1) matchCount++;
+      });
+    });
+    var matchPct = Math.min(Math.round(matchCount / Math.max(allJDKeywords.length, 1) * 100), 100);
+    var matchColor = matchPct >= 60 ? 'bg-green-500' : (matchPct >= 30 ? 'bg-yellow-500' : 'bg-red-500');
+    var matchText = matchPct >= 60 ? '匹配度较高' : (matchPct >= 30 ? '匹配度一般' : '匹配度较低，建议补充');
+    html += '<div><h4 class="font-bold text-sm text-gray-700 mb-2">匹配度估算</h4>' +
+      '<div class="flex items-center gap-2">' +
+      '<div class="match-bar flex-1"><div class="match-fill ' + matchColor + '" style="width:' + matchPct + '%"></div></div>' +
+      '<span class="text-sm font-bold ' + (matchPct >= 60 ? 'text-green-600' : (matchPct >= 30 ? 'text-yellow-600' : 'text-red-600')) + '">' + matchPct + '%</span>' +
+      '</div>' +
+      '<p class="text-xs text-gray-500 mt-1">简历技能与 JD 关键词匹配 ' + matchCount + '/' + allJDKeywords.length + ' 项 &middot; ' + matchText + '</p>' +
+      '</div>';
+  }
+
+  if (!html) {
+    html = '<p class="text-gray-400 text-center py-4">未能从 JD 中提取到有效信息</p>';
+  }
+
+  el.innerHTML = html;
+}
+
 // PDF Upload
 async function uploadPdf() {
-  const fileInput = document.getElementById('pdf-upload');
-  const statusEl = document.getElementById('upload-status');
-  const btn = document.getElementById('upload-btn');
+  var fileInput = document.getElementById('pdf-upload');
+  var statusEl = document.getElementById('upload-status');
+  var btn = document.getElementById('upload-btn');
 
-  if (!fileInput.files.length) { alert('请选择一个 PDF 文件'); return; }
+  if (!fileInput.files.length) {
+    showToast('请选择一个 PDF 文件', 'error');
+    return;
+  }
 
   btn.disabled = true;
-  btn.textContent = '提取中...';
+  btn.innerHTML = '<span class="spinner"></span>提取中...';
   statusEl.classList.remove('hidden');
   statusEl.className = 'text-xs mt-2 text-blue-600';
   statusEl.textContent = '正在解析 PDF...';
+  document.getElementById('upload-error').classList.remove('show');
 
   try {
-    const formData = new FormData();
+    var formData = new FormData();
     formData.append('file', fileInput.files[0]);
 
-    const res = await fetch('/api/upload', { method: 'POST', body: formData });
-    const data = await res.json();
+    var res = await fetch('/api/upload', { method: 'POST', body: formData });
+    var data = await res.json();
 
     if (data.error) {
       statusEl.className = 'text-xs mt-2 text-red-600';
       statusEl.textContent = '解析失败: ' + data.error;
+      showInlineError('upload-error', 'PDF 解析失败: ' + data.error);
     } else {
       statusEl.className = 'text-xs mt-2 text-green-600';
-      statusEl.textContent = `成功提取 ${data.text.length} 字符。文本已提取到下方表单，请手动编辑整理。`;
-      // Show extracted text in a modal or alert for user to reference
-      alert('PDF 文本提取成功！请根据提取的文本内容手动编辑下方表单。\n\n提取的文本前 500 字：\n' + data.text.substring(0, 500));
+      statusEl.textContent = '成功提取 ' + data.text.length + ' 字符。请在弹窗中查看并手动编辑下方表单。';
+      openPdfModal(data.text);
     }
-  } catch (e) {
+  } catch(e) {
     statusEl.className = 'text-xs mt-2 text-red-600';
     statusEl.textContent = '上传失败: ' + e.message;
+    showInlineError('upload-error', '上传失败: ' + e.message);
+    showToast('PDF 上传失败', 'error');
   }
   btn.disabled = false;
   btn.textContent = '导入';
@@ -409,23 +758,31 @@ async function uploadPdf() {
 
 // JD Tailor
 async function tailorResume() {
-  const jd = document.getElementById('jd-input').value.trim();
-  if (!jd) { alert('请先粘贴 JD'); return; }
+  var jd = document.getElementById('jd-input').value.trim();
+  if (!jd) {
+    showInlineError('tailor-error', '请先粘贴 JD 文本');
+    return;
+  }
 
-  const btn = document.getElementById('tailor-btn');
+  var btn = document.getElementById('tailor-btn');
   btn.disabled = true;
-  btn.innerHTML = '<span class="loading">AI 正在分析 JD 并定制简历...</span>';
+  btn.innerHTML = '<span class="spinner"></span>AI 正在分析 JD 并定制简历...';
+  document.getElementById('tailor-error').classList.remove('show');
 
   try {
-    const res = await fetch('/api/tailor', {
+    // Run client-side JD analysis first
+    var analysis = analyzeJD(jd);
+    renderJDAnalysis(analysis);
+
+    var res = await fetch('/api/tailor', {
       method: 'POST',
       headers: {'Content-Type': 'application/json'},
       body: JSON.stringify({jd_text: jd})
     });
 
     if (res.status === 401) {
-      const err = await res.json();
-      document.getElementById('tailor-content').innerHTML = `<p class="text-red-600 text-sm">${err.error}</p>`;
+      var err = await res.json();
+      document.getElementById('tailor-content').innerHTML = '<p class="text-red-600 text-sm">' + err.error + '</p>';
       document.getElementById('tailor-result').classList.remove('hidden');
       btn.disabled = false;
       btn.textContent = 'AI 定制简历';
@@ -435,23 +792,79 @@ async function tailorResume() {
     tailoredData = await res.json();
 
     if (tailoredData.error) {
-      document.getElementById('tailor-content').innerHTML = `<pre class="text-xs bg-red-50 p-3 rounded text-red-600">${tailoredData.raw}</pre>`;
+      document.getElementById('tailor-content').innerHTML = '<pre class="text-xs bg-red-50 p-3 rounded text-red-600">' + tailoredData.raw + '</pre>';
     } else {
-      let html = '<div class="space-y-3">';
+      var html = '<div class="space-y-4">';
+
+      // Summary of changes
+      html += '<div><h4 class="font-bold text-sm text-gray-700 mb-2 border-b pb-1">变更概要</h4><ul class="text-xs text-gray-600 space-y-1">';
+      var changes = [];
+      if (tailoredData.internship && tailoredData.internship.achievements && tailoredData.internship.achievements.length) changes.push('实习经历已优化（' + tailoredData.internship.achievements.length + ' 条）');
+      if (tailoredData.skills && tailoredData.skills.length) changes.push('技能标签已调整（' + tailoredData.skills.length + ' 项）');
+      if (tailoredData.projects && tailoredData.projects.length) changes.push('项目经历已更新（' + tailoredData.projects.length + ' 个）');
+      if (tailoredData.personal_info && tailoredData.personal_info.signature) changes.push('个性签名已优化');
+      if (changes.length === 0) changes.push('未检测到显著变更');
+      changes.forEach(function(c) {
+        html += '<li class="flex items-start gap-2"><span class="text-green-500 mt-0.5">&#10003;</span>' + c + '</li>';
+      });
+      html += '</ul></div>';
+
+      // Changed skills
+      if (tailoredData.skills && tailoredData.skills.length) {
+        var oldSkills = (resumeData && resumeData.skills) ? resumeData.skills.map(function(s){return s.toLowerCase();}) : [];
+        var newSkills = tailoredData.skills;
+        var addedSkills = newSkills.filter(function(s) { return oldSkills.indexOf(s.toLowerCase()) === -1; });
+        var removedSkills = oldSkills.filter(function(s) { return newSkills.map(function(ns){return ns.toLowerCase();}).indexOf(s) === -1; });
+
+        html += '<div><h4 class="font-bold text-sm text-gray-700 mb-2 border-b pb-1">技能变更</h4>';
+        if (addedSkills.length) {
+          html += '<p class="text-xs text-green-600 mb-1">新增技能：</p><div class="flex flex-wrap gap-1 mb-2">';
+          addedSkills.forEach(function(s) { html += '<span class="metric-badge bg-green-600">+ ' + s + '</span>'; });
+          html += '</div>';
+        }
+        if (removedSkills.length) {
+          html += '<p class="text-xs text-red-500 mb-1">移除技能：</p><div class="flex flex-wrap gap-1 mb-2">';
+          removedSkills.forEach(function(s) { html += '<span class="metric-badge bg-red-400">&minus; ' + s + '</span>'; });
+          html += '</div>';
+        }
+        html += '<p class="text-xs text-gray-500">新技能列表：</p><div class="flex flex-wrap gap-1 mt-1">';
+        newSkills.forEach(function(s) { html += '<span class="jd-tag">' + s + '</span>'; });
+        html += '</div></div>';
+      }
+
+      // Changed projects
+      if (tailoredData.projects && tailoredData.projects.length) {
+        html += '<div><h4 class="font-bold text-sm text-gray-700 mb-2 border-b pb-1">项目变更</h4>';
+        tailoredData.projects.forEach(function(p, i) {
+          var old = (resumeData && resumeData.projects && resumeData.projects[i]) ? resumeData.projects[i] : null;
+          html += '<div class="p-3 bg-indigo-50 rounded mb-2">';
+          html += '<p class="font-medium text-sm">' + (p.name||'') + ' <span class="text-xs text-gray-400">' + p.type + ' &middot; ' + p.role + '</span></p>';
+          if (p.result) html += '<p class="text-xs text-indigo-600 mt-1">结果: ' + p.result + '</p>';
+          if (old && old.result !== p.result) {
+            html += '<p class="text-xs text-gray-400 mt-1 line-through">原: ' + (old.result||'') + '</p>';
+          }
+          html += '</div>';
+        });
+        html += '</div>';
+      }
+
+      // Changed internship
       if (tailoredData.internship && tailoredData.internship.achievements) {
-        html += '<h4 class="font-bold text-sm">定制后实习经历：</h4>';
-        tailoredData.internship.achievements.forEach((a,i) => {
-          html += `<div class="p-3 bg-blue-50 rounded"><p class="font-medium text-sm">${a.title||''}</p>`;
-          if (a.result) html += `<p class="text-xs text-blue-600 mt-1">结果: ${a.result}</p>`;
-          html += `</div>`;
+        html += '<h4 class="font-bold text-sm text-gray-700 border-b pb-1">定制后实习经历：</h4>';
+        tailoredData.internship.achievements.forEach(function(a) {
+          html += '<div class="p-3 bg-blue-50 rounded"><p class="font-medium text-sm">' + (a.title||'') + '</p>';
+          if (a.result) html += '<p class="text-xs text-blue-600 mt-1">结果: ' + a.result + '</p>';
+          html += '</div>';
         });
       }
+
       html += '</div>';
       document.getElementById('tailor-content').innerHTML = html;
     }
     document.getElementById('tailor-result').classList.remove('hidden');
   } catch(e) {
-    alert('请求失败: ' + e.message);
+    showInlineError('tailor-error', '请求失败: ' + e.message);
+    showToast('AI 定制失败', 'error');
   }
   btn.disabled = false;
   btn.textContent = 'AI 定制简历';
@@ -461,6 +874,7 @@ function applyTailored() {
   if (tailoredData && !tailoredData.error) {
     resumeData = tailoredData;
     renderForm();
+    updatePreview();
     showToast('已应用定制版本');
   }
   document.getElementById('tailor-result').classList.add('hidden');
@@ -468,55 +882,84 @@ function applyTailored() {
 
 // Questions
 async function genQuestions() {
-  const jd = document.getElementById('jd-input-q').value.trim();
-  if (!jd) { alert('请先粘贴 JD'); return; }
+  var jd = document.getElementById('jd-input-q').value.trim();
+  if (!jd) {
+    showInlineError('questions-error', '请先粘贴 JD 文本');
+    return;
+  }
 
-  const btn = document.getElementById('questions-btn');
+  var btn = document.getElementById('questions-btn');
   btn.disabled = true;
-  btn.innerHTML = '<span class="loading">AI 正在生成问题...</span>';
+  btn.innerHTML = '<span class="spinner"></span>AI 正在生成问题...';
+  document.getElementById('questions-error').classList.remove('show');
+  document.getElementById('copy-questions-btn').classList.add('hidden');
 
   try {
-    const res = await fetch('/api/questions', {
+    var res = await fetch('/api/questions', {
       method: 'POST',
       headers: {'Content-Type': 'application/json'},
       body: JSON.stringify({jd_text: jd})
     });
 
     if (res.status === 401) {
-      const err = await res.json();
-      document.getElementById('questions-list').innerHTML = `<p class="text-red-600 text-sm">${err.error}</p>`;
+      var err = await res.json();
+      document.getElementById('questions-list').innerHTML = '<p class="text-red-600 text-sm">' + err.error + '</p>';
       document.getElementById('questions-result').classList.remove('hidden');
       btn.disabled = false;
       btn.textContent = '生成面试问题';
       return;
     }
 
-    const data = await res.json();
+    var data = await res.json();
 
     if (data.error) {
-      document.getElementById('questions-list').innerHTML = `<pre class="text-xs bg-red-50 p-3 rounded text-red-600">${data.raw}</pre>`;
+      document.getElementById('questions-list').innerHTML = '<pre class="text-xs bg-red-50 p-3 rounded text-red-600">' + data.raw + '</pre>';
     } else {
-      let html = '';
-      const typeMap = {'技术':'type-tech','行为':'type-behavior','产品':'type-product','综合':'type-general'};
-      data.questions.forEach((q, i) => {
-        const typeClass = typeMap[q.type] || 'type-general';
-        html += `<div class="question-card pl-4 py-3 bg-amber-50/50 rounded-r-lg">
-          <div class="flex items-center gap-2 mb-1">
-            <span class="font-bold text-sm text-gray-800">Q${i+1}</span>
-            <span class="question-type ${typeClass}">${q.type}</span>
-          </div>
-          <p class="text-sm text-gray-700 mb-2">${q.question}</p>
-          <p class="text-xs text-gray-500"><span class="font-medium">考察点：</span>${q.focus}</p>
-        </div>`;
+      generatedQuestions = data.questions || [];
+      var html = '';
+      var typeMap = {'技术':'type-tech','行为':'type-behavior','产品':'type-product','综合':'type-general'};
+      generatedQuestions.forEach(function(q, i) {
+        var typeClass = typeMap[q.type] || 'type-general';
+        html += '<div class="question-card pl-4 py-3 bg-amber-50/50 rounded-r-lg">' +
+          '<div class="flex items-center gap-2 mb-1">' +
+          '<span class="font-bold text-sm text-gray-800">Q' + (i+1) + '</span>' +
+          '<span class="question-type ' + typeClass + '">' + q.type + '</span>' +
+          '</div>' +
+          '<p class="text-sm text-gray-700 mb-2">' + q.question + '</p>' +
+          '<p class="text-xs text-gray-500"><span class="font-medium">考察点：</span>' + q.focus + '</p>' +
+          '</div>';
       });
       document.getElementById('questions-list').innerHTML = html;
+      document.getElementById('questions-count').textContent = '共 ' + generatedQuestions.length + ' 个问题';
+      document.getElementById('copy-questions-btn').classList.remove('hidden');
     }
     document.getElementById('questions-result').classList.remove('hidden');
   } catch(e) {
-    alert('请求失败: ' + e.message);
+    showInlineError('questions-error', '请求失败: ' + e.message);
+    showToast('生成面试问题失败', 'error');
   }
   btn.disabled = false;
   btn.textContent = '生成面试问题';
+}
+
+function copyAllQuestions() {
+  if (!generatedQuestions.length) {
+    showToast('没有可复制的问题', 'error');
+    return;
+  }
+  var text = generatedQuestions.map(function(q, i) {
+    return 'Q' + (i+1) + ' [' + q.type + ']\n' + q.question + '\n考察点：' + q.focus;
+  }).join('\n\n');
+
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).then(function() {
+      showToast('已复制全部 ' + generatedQuestions.length + ' 个面试问题');
+    }).catch(function() {
+      fallbackCopy(text);
+    });
+  } else {
+    fallbackCopy(text);
+  }
 }
 
 loadData();
