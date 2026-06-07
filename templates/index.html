@@ -68,9 +68,21 @@
     </div>
     <div class="flex items-center justify-between p-3 border-b bg-gray-50">
       <span id="pdf-char-count" class="text-xs text-gray-500"></span>
-      <button onclick="copyPdfText()" class="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-medium transition cursor-pointer">复制到剪贴板</button>
+      <div class="flex gap-2">
+        <button onclick="parseAndImport()" id="parse-import-btn" class="px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white rounded-lg text-xs font-medium transition cursor-pointer">AI 解析并导入</button>
+        <button onclick="copyPdfText()" class="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-medium transition cursor-pointer">复制到剪贴板</button>
+      </div>
     </div>
     <div id="pdf-text-content" class="modal-text"></div>
+    <!-- AI 解析结果预览 -->
+    <div id="parse-preview" class="hidden p-4 border-t bg-blue-50">
+      <h4 class="text-sm font-bold text-blue-800 mb-2">AI 解析结果预览</h4>
+      <div id="parse-summary" class="text-xs text-gray-700 space-y-1 max-h-48 overflow-y-auto mb-3"></div>
+      <div class="flex gap-2">
+        <button onclick="applyParsed()" class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-xs font-medium transition cursor-pointer">确认应用</button>
+        <button onclick="cancelParse()" class="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-lg text-xs font-medium transition cursor-pointer">取消</button>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -318,6 +330,156 @@ document.getElementById('pdf-modal').addEventListener('click', function(e) {
 document.addEventListener('keydown', function(e) {
   if (e.key === 'Escape') closePdfModal();
 });
+
+// PDF AI Parse
+let parsedResumeData = null;
+
+async function parseAndImport() {
+  if (!pdfExtractedText) return;
+
+  const btn = document.getElementById('parse-import-btn');
+  btn.disabled = true;
+  btn.textContent = 'AI 解析中...';
+
+  try {
+    const res = await fetch('/api/parse-to-data', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({text: pdfExtractedText})
+    });
+    const data = await res.json();
+
+    if (data.error) {
+      showToast('AI 解析失败: ' + (data.raw || data.error), 'error');
+    } else {
+      parsedResumeData = data;
+      showParsePreview(data);
+    }
+  } catch(e) {
+    showToast('请求失败: ' + e.message, 'error');
+  }
+  btn.disabled = false;
+  btn.textContent = 'AI 解析并导入';
+}
+
+function showParsePreview(data) {
+  const preview = document.getElementById('parse-preview');
+  const summary = document.getElementById('parse-summary');
+  preview.classList.remove('hidden');
+
+  let html = '';
+  // Personal info
+  if (data.personal_info && data.personal_info.name) {
+    html += `<p><b>姓名:</b> ${data.personal_info.name}</p>`;
+  }
+  if (data.personal_info && data.personal_info.phone) {
+    html += `<p><b>电话:</b> ${data.personal_info.phone}</p>`;
+  }
+  if (data.personal_info && data.personal_info.email) {
+    html += `<p><b>邮箱:</b> ${data.personal_info.email}</p>`;
+  }
+
+  // Education
+  if (data.education) {
+    const grad = data.education.graduate || {};
+    const undergrad = data.education.undergraduate || {};
+    if (grad.school) html += `<p><b>研究生:</b> ${grad.school} - ${grad.major} (${grad.start})</p>`;
+    if (undergrad.school) html += `<p><b>本科:</b> ${undergrad.school} - ${undergrad.major} (${undergrad.start})</p>`;
+  }
+
+  // Skills
+  if (data.skills && data.skills.length) {
+    html += `<p><b>技能:</b> ${data.skills.length} 项</p>`;
+  }
+
+  // Internship
+  if (data.internship && data.internship.achievements) {
+    html += `<p><b>实习经历:</b> ${data.internship.achievements.length} 段</p>`;
+  }
+
+  // Projects
+  if (data.projects && data.projects.length) {
+    html += `<p><b>项目经历:</b> ${data.projects.length} 个</p>`;
+  }
+
+  // Competitions
+  if (data.competitions && data.competitions.length) {
+    html += `<p><b>竞赛奖项:</b> ${data.competitions.length} 项</p>`;
+  }
+
+  // Publications
+  if (data.publications && data.publications.length) {
+    html += `<p><b>论文发表:</b> ${data.publications.length} 篇</p>`;
+  }
+
+  // Awards
+  if (data.awards && data.awards.length) {
+    html += `<p><b>荣誉:</b> ${data.awards.length} 项</p>`;
+  }
+
+  summary.innerHTML = html || '<p class="text-gray-500">未能提取到有效信息，请检查 PDF 内容</p>';
+}
+
+function applyParsed() {
+  if (!parsedResumeData) return;
+
+  // Merge: only fill fields that have values in parsed data
+  if (parsedResumeData.personal_info) {
+    for (const key in parsedResumeData.personal_info) {
+      if (parsedResumeData.personal_info[key]) {
+        resumeData.personal_info[key] = parsedResumeData.personal_info[key];
+      }
+    }
+  }
+
+  if (parsedResumeData.education) {
+    if (parsedResumeData.education.graduate) {
+      for (const key in parsedResumeData.education.graduate) {
+        if (parsedResumeData.education.graduate[key]) {
+          resumeData.education.graduate[key] = parsedResumeData.education.graduate[key];
+        }
+      }
+    }
+    if (parsedResumeData.education.undergraduate) {
+      for (const key in parsedResumeData.education.undergraduate) {
+        if (parsedResumeData.education.undergraduate[key]) {
+          resumeData.education.undergraduate[key] = parsedResumeData.education.undergraduate[key];
+        }
+      }
+    }
+  }
+
+  // Replace list fields only if parsed data has content
+  if (parsedResumeData.skills && parsedResumeData.skills.length) resumeData.skills = parsedResumeData.skills;
+  if (parsedResumeData.internship && parsedResumeData.internship.achievements && parsedResumeData.internship.achievements.length) {
+    resumeData.internship.company = parsedResumeData.internship.company || resumeData.internship.company;
+    resumeData.internship.department = parsedResumeData.internship.department || resumeData.internship.department;
+    resumeData.internship.position = parsedResumeData.internship.position || resumeData.internship.position;
+    resumeData.internship.period = parsedResumeData.internship.period || resumeData.internship.period;
+    resumeData.internship.location = parsedResumeData.internship.location || resumeData.internship.location;
+    resumeData.internship.achievements = parsedResumeData.internship.achievements;
+  }
+  if (parsedResumeData.projects && parsedResumeData.projects.length) resumeData.projects = parsedResumeData.projects;
+  if (parsedResumeData.product_cases && parsedResumeData.product_cases.length) resumeData.product_cases = parsedResumeData.product_cases;
+  if (parsedResumeData.competitions && parsedResumeData.competitions.length) resumeData.competitions = parsedResumeData.competitions;
+  if (parsedResumeData.publications && parsedResumeData.publications.length) resumeData.publications = parsedResumeData.publications;
+  if (parsedResumeData.software_copyrights && parsedResumeData.software_copyrights.length) resumeData.software_copyrights = parsedResumeData.software_copyrights;
+  if (parsedResumeData.awards && parsedResumeData.awards.length) resumeData.awards = parsedResumeData.awards;
+  if (parsedResumeData.leadership && parsedResumeData.leadership.length) resumeData.leadership = parsedResumeData.leadership;
+  if (parsedResumeData.volunteer && parsedResumeData.volunteer.hours) resumeData.volunteer = parsedResumeData.volunteer;
+  if (parsedResumeData.self_evaluation && parsedResumeData.self_evaluation.length) resumeData.self_evaluation = parsedResumeData.self_evaluation;
+
+  // Save and re-render
+  saveData();
+  renderForm();
+  showToast('已导入 PDF 解析数据');
+  closePdfModal();
+}
+
+function cancelParse() {
+  document.getElementById('parse-preview').classList.add('hidden');
+  parsedResumeData = null;
+}
 
 // Load data on init
 async function loadData() {

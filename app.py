@@ -23,6 +23,7 @@ from jinja2 import Environment, FileSystemLoader, select_autoescape
 from pydantic import BaseModel
 
 from agents.parseAgent import extract_text_from_pdf
+from agents.structureAgent import parse_to_resume_data
 from agents.optimizeAgent import optimize_resume
 from agents.interviewAgent import generate_questions
 
@@ -279,6 +280,29 @@ async def upload_resume(request: Request, file: UploadFile = File(...)):
         text = extract_text_from_pdf(pdf_bytes)
         return {"text": text, "filename": file.filename}
     except ValueError as e:
+        return JSONResponse(status_code=500, content={"error": str(e)})
+
+
+class ParseRequest(BaseModel):
+    text: str
+
+
+@app.post("/api/parse-to-data")
+async def parse_to_data(body: ParseRequest, request: Request):
+    """将 PDF 解析后的原始文本通过 AI 转换为结构化简历数据"""
+    auth_redirect = require_auth(request)
+    if auth_redirect:
+        return RedirectResponse(url="/login")
+    if not _api_key or _api_key == "dummy-key":
+        return JSONResponse(
+            status_code=503,
+            content={"error": "服务配置中，AI 功能暂不可用"}
+        )
+    try:
+        result = parse_to_resume_data(client, MODEL, body.text)
+        return result
+    except Exception as e:
+        logger.exception("Parse to data endpoint error")
         return JSONResponse(status_code=500, content={"error": str(e)})
 
 
