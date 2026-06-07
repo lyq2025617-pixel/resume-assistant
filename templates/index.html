@@ -137,7 +137,8 @@
           <div><label class="text-xs text-gray-500">手机</label><input id="phone" class="w-full mt-1 px-3 py-2 border rounded-lg text-sm" type="text"></div>
           <div><label class="text-xs text-gray-500">邮箱</label><input id="email" class="w-full mt-1 px-3 py-2 border rounded-lg text-sm" type="text"></div>
           <div><label class="text-xs text-gray-500">籍贯</label><input id="location" class="w-full mt-1 px-3 py-2 border rounded-lg text-sm" type="text"></div>
-          <div class="col-span-2"><label class="text-xs text-gray-500">个性签名</label><input id="signature" class="w-full mt-1 px-3 py-2 border rounded-lg text-sm" type="text" placeholder="一句话描述你的职业目标"></div>
+          <div><label class="text-xs text-gray-500">政治面貌</label><input id="political" class="w-full mt-1 px-3 py-2 border rounded-lg text-sm" type="text" placeholder="如：中共党员"></div>
+          <div><label class="text-xs text-gray-500">个性签名</label><input id="signature" class="w-full mt-1 px-3 py-2 border rounded-lg text-sm" type="text" placeholder="一句话描述你的职业目标"></div>
         </div>
       </div>
 
@@ -469,6 +470,9 @@ function showParsePreview(data) {
   if (data.personal_info && data.personal_info.location) {
     html += `<p><b>籍贯:</b> ${data.personal_info.location}</p>`;
   }
+  if (data.personal_info && data.personal_info.political) {
+    html += `<p><b>政治面貌:</b> ${data.personal_info.political}</p>`;
+  }
 
   // Education
   if (data.education) {
@@ -543,7 +547,7 @@ function showParsePreview(data) {
 function applyParsed() {
   if (!parsedResumeData) return;
 
-  // Merge: only fill fields that have values in parsed data
+  // Merge personal_info: fill all fields the AI extracted
   if (parsedResumeData.personal_info) {
     for (const key in parsedResumeData.personal_info) {
       if (parsedResumeData.personal_info[key]) {
@@ -552,6 +556,7 @@ function applyParsed() {
     }
   }
 
+  // Merge education
   if (parsedResumeData.education) {
     if (parsedResumeData.education.graduate) {
       for (const key in parsedResumeData.education.graduate) {
@@ -569,8 +574,16 @@ function applyParsed() {
     }
   }
 
-  // Replace list fields only if parsed data has content
-  if (parsedResumeData.skills && parsedResumeData.skills.length) resumeData.skills = parsedResumeData.skills;
+  // Skills: auto-categorize if not already prefixed
+  if (parsedResumeData.skills && parsedResumeData.skills.length) {
+    var categories = ['核心能力', '工具能力', '技术能力', '产品能力'];
+    resumeData.skills = parsedResumeData.skills.map(function(s) {
+      var hasCategory = categories.some(function(c) { return s.indexOf(c + '：') === 0 || s.indexOf(c + ':') === 0; });
+      return hasCategory ? s : '技术能力：' + s;
+    });
+  }
+
+  // Merge internship
   if (parsedResumeData.internship && parsedResumeData.internship.achievements && parsedResumeData.internship.achievements.length) {
     resumeData.internship.company = parsedResumeData.internship.company || resumeData.internship.company;
     resumeData.internship.department = parsedResumeData.internship.department || resumeData.internship.department;
@@ -579,6 +592,8 @@ function applyParsed() {
     resumeData.internship.location = parsedResumeData.internship.location || resumeData.internship.location;
     resumeData.internship.achievements = parsedResumeData.internship.achievements;
   }
+
+  // Replace list fields only if parsed data has content
   if (parsedResumeData.projects && parsedResumeData.projects.length) resumeData.projects = parsedResumeData.projects;
   if (parsedResumeData.product_cases && parsedResumeData.product_cases.length) resumeData.product_cases = parsedResumeData.product_cases;
   if (parsedResumeData.competitions && parsedResumeData.competitions.length) resumeData.competitions = parsedResumeData.competitions;
@@ -589,9 +604,9 @@ function applyParsed() {
   if (parsedResumeData.volunteer && parsedResumeData.volunteer.hours) resumeData.volunteer = parsedResumeData.volunteer;
   if (parsedResumeData.self_evaluation && parsedResumeData.self_evaluation.length) resumeData.self_evaluation = parsedResumeData.self_evaluation;
 
-  // Save and re-render
-  saveData();
+  // Re-render first, then save
   renderForm();
+  saveData();
   showToast('已导入 PDF 解析数据');
   closePdfModal();
 }
@@ -632,6 +647,7 @@ function renderForm() {
   document.getElementById('phone').value = d.phone || '';
   document.getElementById('email').value = d.email || '';
   document.getElementById('location').value = d.location || '';
+  document.getElementById('political').value = d.political || '';
   document.getElementById('signature').value = d.signature || '';
 
   // Education
@@ -830,6 +846,7 @@ function collectFormData() {
   resumeData.personal_info.phone = document.getElementById('phone').value;
   resumeData.personal_info.email = document.getElementById('email').value;
   resumeData.personal_info.location = document.getElementById('location').value;
+  resumeData.personal_info.political = document.getElementById('political').value;
   resumeData.personal_info.signature = document.getElementById('signature').value;
 
   // Education

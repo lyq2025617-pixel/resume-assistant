@@ -374,10 +374,15 @@ async def analyze_jd(body: JDRequest, request: Request):
 输出格式：
 {
   "keywords": ["技能关键词1", "技能关键词2", ...],
+  "core_competencies": ["核心能力要求1", "核心能力要求2", ...],
   "experience_required": "经验要求描述（如：3-5年后端开发经验）",
   "key_responsibilities": ["职责1", "职责2", ...],
   "match_tips": ["匹配建议1", "匹配建议2", ...]
 }
+
+说明：
+- core_competencies：从 JD 中提取岗位所需的核心能力（如：系统设计能力、数据分析能力、跨部门协作能力等），不要重复 keywords 中的技术栈
+- keywords：具体技术栈关键词（如：Python、Vue、MySQL 等）
 
 只输出 JSON，不要其他内容。""",
             messages=[{"role": "user", "content": body.jd_text}],
