@@ -276,7 +276,7 @@
     <div class="case-block">
       <div class="case-name">{{ case.name }}</div>
       {% if case.role %}<div class="case-role">{{ case.role }}</div>{% endif %}
-      {% for item in case.items %}
+      {% for item in case['items'] %}
       <div class="case-row"><span class="case-label">{{ item.title }}</span>{{ item.content }}</div>
       {% endfor %}
     </div>
@@ -293,7 +293,7 @@
         <span class="proj-meta">&nbsp;| {{ p.type }} | {{ p.role }} | {{ p.status }}</span>
       </div>
       <ul class="proj-item-list">
-        {% for item in p.items %}
+        {% for item in p['items'] %}
         <li>{{ item }}</li>
         {% endfor %}
       </ul>
