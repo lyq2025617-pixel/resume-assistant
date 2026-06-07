@@ -1,0 +1,525 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>简历自动更新助手</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;600;700&family=Noto+Sans+SC:wght@300;400;500;700&display=swap');
+    body { font-family: 'Noto Sans SC', sans-serif; }
+    .serif { font-family: 'Noto Serif SC', serif; }
+    .tab-active { border-bottom: 2px solid #3b82f6; color: #3b82f6; font-weight: 600; }
+    .section-card { border-left: 3px solid #3b82f6; }
+    .star-label { background: #f0f7ff; color: #1d4ed8; font-size: 0.7rem; padding: 1px 6px; border-radius: 4px; font-weight: 500; }
+    .loading { animation: pulse 1.5s ease-in-out infinite; }
+    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+    textarea:focus { outline: none; border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59,130,246,0.1); }
+    .metric-badge { background: linear-gradient(135deg, #3b82f6, #6366f1); color: white; font-size: 0.75rem; padding: 2px 8px; border-radius: 12px; display: inline-block; margin: 2px; }
+    .question-card { border-left: 3px solid #f59e0b; }
+    .question-type { font-size: 0.7rem; padding: 2px 8px; border-radius: 12px; font-weight: 500; }
+    .type-tech { background: #dbeafe; color: #1d4ed8; }
+    .type-behavior { background: #fef3c7; color: #b45309; }
+    .type-product { background: #d1fae5; color: #065f46; }
+    .type-general { background: #ede9fe; color: #6d28d9; }
+  </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+
+<!-- Header -->
+<header class="bg-white shadow-sm border-b">
+  <div class="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+    <div class="flex items-center gap-3">
+      <div class="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center text-white font-bold text-lg">简</div>
+      <div>
+        <h1 class="text-xl font-bold text-gray-800">简历自动更新助手</h1>
+        <p class="text-sm text-gray-500">编辑简历 → 上传 JD → AI 定制 → 生成面试问题 → 导出 PDF</p>
+      </div>
+    </div>
+    <a href="/preview" target="_blank" class="px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg text-sm font-medium text-gray-700 transition">
+      预览简历
+    </a>
+  </div>
+</header>
+
+<!-- Tabs -->
+<div class="max-w-7xl mx-auto px-6 mt-4">
+  <div class="flex gap-6 border-b">
+    <button onclick="switchTab('resume')" id="tab-resume" class="pb-3 px-1 tab-active transition cursor-pointer">简历编辑</button>
+    <button onclick="switchTab('jd')" id="tab-jd" class="pb-3 px-1 text-gray-500 hover:text-gray-700 cursor-pointer transition">JD 分析与定制</button>
+    <button onclick="switchTab('questions')" id="tab-questions" class="pb-3 px-1 text-gray-500 hover:text-gray-700 cursor-pointer transition">面试问题生成</button>
+  </div>
+</div>
+
+<!-- Tab 1: Resume Management -->
+<div id="panel-resume" class="max-w-7xl mx-auto px-6 py-6">
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+    <!-- Left: Edit Form -->
+    <div>
+      <!-- Upload PDF -->
+      <div class="bg-white rounded-xl shadow-sm border p-6 mb-4">
+        <h2 class="text-lg font-bold text-gray-800 mb-2">快速导入</h2>
+        <p class="text-xs text-gray-400 mb-3">上传已有 PDF 简历，AI 提取文本后可直接编辑</p>
+        <div class="flex gap-2">
+          <input type="file" id="pdf-upload" accept=".pdf" class="text-sm">
+          <button onclick="uploadPdf()" id="upload-btn" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-sm font-medium transition">导入</button>
+        </div>
+        <p id="upload-status" class="text-xs mt-2 hidden"></p>
+      </div>
+
+      <!-- Personal Info -->
+      <div class="bg-white rounded-xl shadow-sm border p-6">
+        <h2 class="text-lg font-bold text-gray-800 mb-4">个人信息</h2>
+        <div class="grid grid-cols-2 gap-4">
+          <div><label class="text-xs text-gray-500">姓名</label><input id="name" class="w-full mt-1 px-3 py-2 border rounded-lg text-sm" type="text"></div>
+          <div><label class="text-xs text-gray-500">手机</label><input id="phone" class="w-full mt-1 px-3 py-2 border rounded-lg text-sm" type="text"></div>
+          <div><label class="text-xs text-gray-500">邮箱</label><input id="email" class="w-full mt-1 px-3 py-2 border rounded-lg text-sm" type="text"></div>
+          <div><label class="text-xs text-gray-500">籍贯</label><input id="location" class="w-full mt-1 px-3 py-2 border rounded-lg text-sm" type="text"></div>
+          <div class="col-span-2"><label class="text-xs text-gray-500">个性签名</label><input id="signature" class="w-full mt-1 px-3 py-2 border rounded-lg text-sm" type="text" placeholder="一句话描述你的职业目标"></div>
+        </div>
+      </div>
+
+      <!-- Skills -->
+      <div class="bg-white rounded-xl shadow-sm border p-6 mt-4">
+        <h2 class="text-lg font-bold text-gray-800 mb-4">技能标签</h2>
+        <div id="skills-list" class="space-y-2"></div>
+        <button onclick="addSkill()" class="mt-3 text-sm text-blue-600 hover:text-blue-800 font-medium">+ 添加技能</button>
+      </div>
+
+      <!-- Internship -->
+      <div class="bg-white rounded-xl shadow-sm border p-6 mt-4">
+        <h2 class="text-lg font-bold text-gray-800 mb-1">实习经历</h2>
+        <p class="text-xs text-gray-400 mb-4">按 STAR 法则撰写，每个经历包含 S/T/A/R 四个部分</p>
+        <div id="internship-list" class="space-y-4"></div>
+        <button onclick="addInternship()" class="mt-3 text-sm text-blue-600 hover:text-blue-800 font-medium">+ 添加经历</button>
+      </div>
+
+      <!-- Projects -->
+      <div class="bg-white rounded-xl shadow-sm border p-6 mt-4">
+        <h2 class="text-lg font-bold text-gray-800 mb-1">项目经历</h2>
+        <p class="text-xs text-gray-400 mb-4">按 STAR 法则撰写</p>
+        <div id="projects-list" class="space-y-4"></div>
+      </div>
+
+      <!-- Save -->
+      <div class="flex gap-4 mt-6">
+        <button onclick="saveData()" class="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition shadow-sm">保存修改</button>
+        <a href="/preview" target="_blank" class="px-6 py-3 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium transition shadow-sm text-center no-underline">导出 PDF</a>
+      </div>
+    </div>
+
+    <!-- Right: Preview -->
+    <div class="lg:sticky lg:top-4 self-start">
+      <div class="bg-white rounded-xl shadow-sm border p-6">
+        <h2 class="text-lg font-bold text-gray-800 mb-4">简历预览</h2>
+        <div id="preview-area" class="text-sm text-gray-600 space-y-4 max-h-[80vh] overflow-y-auto pr-2">
+          <p class="text-gray-400 text-center py-8">点击"保存修改"后更新预览</p>
+        </div>
+        <a href="/preview" target="_blank" class="mt-4 block text-center px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg text-sm font-medium text-gray-700 transition">打开完整版预览</a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Tab 2: JD Analysis -->
+<div id="panel-jd" class="max-w-7xl mx-auto px-6 py-6 hidden">
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <div>
+      <div class="bg-white rounded-xl shadow-sm border p-6">
+        <h2 class="text-lg font-bold text-gray-800 mb-2">上传目标岗位 JD</h2>
+        <p class="text-xs text-gray-400 mb-4">粘贴职位描述，AI 将自动定制简历内容</p>
+        <textarea id="jd-input" rows="12" class="w-full px-4 py-3 border rounded-lg text-sm resize-none" placeholder="粘贴职位描述..."></textarea>
+        <button onclick="tailorResume()" id="tailor-btn" class="mt-4 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition">AI 定制简历</button>
+      </div>
+      <div id="tailor-result" class="bg-white rounded-xl shadow-sm border p-6 mt-4 hidden">
+        <h2 class="text-lg font-bold text-gray-800 mb-4">定制结果</h2>
+        <div id="tailor-content" class="text-sm space-y-4"></div>
+        <div class="flex gap-3 mt-4">
+          <button onclick="applyTailored()" class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-medium transition">应用此版本</button>
+          <button onclick="document.getElementById('tailor-result').classList.add('hidden')" class="px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg text-sm font-medium text-gray-700 transition">取消</button>
+        </div>
+      </div>
+    </div>
+    <div class="bg-white rounded-xl shadow-sm border p-6">
+      <h2 class="text-lg font-bold text-gray-800 mb-4">JD 分析</h2>
+      <div id="jd-analysis" class="text-sm text-gray-600 space-y-3">
+        <p class="text-gray-400 text-center py-8">粘贴 JD 后将显示关键词、核心能力要求等分析</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Tab 3: Interview Questions -->
+<div id="panel-questions" class="max-w-7xl mx-auto px-6 py-6 hidden">
+  <div class="bg-white rounded-xl shadow-sm border p-6">
+    <h2 class="text-lg font-bold text-gray-800 mb-2">面试问题生成</h2>
+    <p class="text-xs text-gray-400 mb-4">基于你的简历和目标 JD，生成高概率面试问题（含考察点）</p>
+    <textarea id="jd-input-q" rows="6" class="w-full px-4 py-3 border rounded-lg text-sm resize-none" placeholder="粘贴职位描述..."></textarea>
+    <button onclick="genQuestions()" id="questions-btn" class="mt-4 px-6 py-3 bg-amber-500 hover:bg-amber-600 text-white rounded-lg font-medium transition">生成面试问题</button>
+  </div>
+  <div id="questions-result" class="bg-white rounded-xl shadow-sm border p-6 mt-4 hidden">
+    <h2 class="text-lg font-bold text-gray-800 mb-4">面试问题清单</h2>
+    <div id="questions-list" class="space-y-3"></div>
+  </div>
+</div>
+
+<script>
+// Global state
+let resumeData = null;
+let tailoredData = null;
+
+// Load data on init
+async function loadData() {
+  const res = await fetch('/api/data');
+  resumeData = await res.json();
+  renderForm();
+}
+
+function switchTab(tab) {
+  ['resume','jd','questions'].forEach(t => {
+    document.getElementById('panel-'+t).classList.toggle('hidden', t !== tab);
+    document.getElementById('tab-'+t).classList.toggle('tab-active', t === tab);
+    if (t !== tab) {
+      document.getElementById('tab-'+t).classList.remove('text-gray-700');
+      document.getElementById('tab-'+t).classList.add('text-gray-500');
+    } else {
+      document.getElementById('tab-'+t).classList.add('text-gray-700');
+    }
+  });
+}
+
+function renderForm() {
+  const d = resumeData.personal_info;
+  document.getElementById('name').value = d.name;
+  document.getElementById('phone').value = d.phone;
+  document.getElementById('email').value = d.email;
+  document.getElementById('location').value = d.location;
+  document.getElementById('signature').value = d.signature || '';
+
+  // Skills
+  const skillsEl = document.getElementById('skills-list');
+  skillsEl.innerHTML = '';
+  resumeData.skills.forEach((s, i) => {
+    skillsEl.innerHTML += `<div class="flex gap-2"><input value="${s}" data-skill="${i}" class="flex-1 px-3 py-2 border rounded-lg text-sm"><button onclick="removeSkill(${i})" class="text-red-400 hover:text-red-600 text-sm px-2">×</button></div>`;
+  });
+
+  // Internship (STAR)
+  const intEl = document.getElementById('internship-list');
+  intEl.innerHTML = '';
+  resumeData.internship.achievements.forEach((a, i) => {
+    intEl.innerHTML += renderSTAR('internship', i, a);
+  });
+
+  // Projects (STAR)
+  const projEl = document.getElementById('projects-list');
+  projEl.innerHTML = '';
+  resumeData.projects.forEach((p, i) => {
+    projEl.innerHTML += renderProjectSTAR(i, p);
+  });
+}
+
+function renderSTAR(section, idx, item) {
+  return `
+    <div class="border rounded-lg p-4 bg-gray-50/50 section-card">
+      <div class="flex items-center justify-between mb-3">
+        <input value="${item.title || ''}" data-${section}="${idx}" data-field="title" class="flex-1 mr-3 px-3 py-1.5 border rounded text-sm font-medium" placeholder="经历标题">
+        <button onclick="remove${section.charAt(0).toUpperCase()+section.slice(1)}(${idx})" class="text-red-400 hover:text-red-600 text-sm px-2">×</button>
+      </div>
+      <div class="grid grid-cols-1 gap-2">
+        <div><span class="star-label">S 情境</span><textarea data-${section}="${idx}" data-field="situation" rows="2" class="w-full mt-1 px-3 py-2 border rounded-lg text-xs resize-none" placeholder="背景与情境...">${item.situation||''}</textarea></div>
+        <div><span class="star-label">T 任务</span><textarea data-${section}="${idx}" data-field="task" rows="2" class="w-full mt-1 px-3 py-2 border rounded-lg text-xs resize-none" placeholder="任务与目标...">${item.task||''}</textarea></div>
+        <div><span class="star-label">A 行动</span><textarea data-${section}="${idx}" data-field="action" rows="3" class="w-full mt-1 px-3 py-2 border rounded-lg text-xs resize-none" placeholder="采取的行动...">${item.action||''}</textarea></div>
+        <div><span class="star-label">R 结果</span><textarea data-${section}="${idx}" data-field="result" rows="2" class="w-full mt-1 px-3 py-2 border rounded-lg text-xs resize-none" placeholder="量化结果...">${item.result||''}</textarea></div>
+      </div>
+    </div>`;
+}
+
+function renderProjectSTAR(idx, p) {
+  return `
+    <div class="border rounded-lg p-4 bg-gray-50/50 section-card">
+      <div class="flex items-center justify-between mb-2">
+        <input value="${p.name||''}" data-project="${idx}" data-field="name" class="flex-1 mr-3 px-3 py-1.5 border rounded text-sm font-medium">
+        <span class="text-xs text-gray-400">${p.type} · ${p.role}</span>
+      </div>
+      <div class="grid grid-cols-1 gap-2">
+        <div><span class="star-label">S 情境</span><textarea data-project="${idx}" data-field="situation" rows="2" class="w-full mt-1 px-3 py-2 border rounded-lg text-xs resize-none">${p.situation||''}</textarea></div>
+        <div><span class="star-label">T 任务</span><textarea data-project="${idx}" data-field="task" rows="2" class="w-full mt-1 px-3 py-2 border rounded-lg text-xs resize-none">${p.task||''}</textarea></div>
+        <div><span class="star-label">A 行动</span><textarea data-project="${idx}" data-field="action" rows="3" class="w-full mt-1 px-3 py-2 border rounded-lg text-xs resize-none">${p.action||''}</textarea></div>
+        <div><span class="star-label">R 结果</span><textarea data-project="${idx}" data-field="result" rows="2" class="w-full mt-1 px-3 py-2 border rounded-lg text-xs resize-none">${p.result||''}</textarea></div>
+      </div>
+    </div>`;
+}
+
+function collectFormData() {
+  resumeData.personal_info.name = document.getElementById('name').value;
+  resumeData.personal_info.phone = document.getElementById('phone').value;
+  resumeData.personal_info.email = document.getElementById('email').value;
+  resumeData.personal_info.location = document.getElementById('location').value;
+  resumeData.personal_info.signature = document.getElementById('signature').value;
+
+  resumeData.skills = [];
+  document.querySelectorAll('[data-skill]').forEach(el => {
+    resumeData.skills[el.dataset.skill] = el.value;
+  });
+  resumeData.skills = resumeData.skills.filter(s => s);
+
+  resumeData.internship.achievements = collectSTAR('internship');
+  resumeData.projects = collectProjectSTAR();
+}
+
+function collectSTAR(section) {
+  const items = [];
+  const indices = new Set();
+  document.querySelectorAll(`[data-${section}]`).forEach(el => indices.add(el.dataset[section]));
+  indices.forEach(idx => {
+    const item = { title: '', situation: '', task: '', action: '', result: '' };
+    document.querySelectorAll(`[data-${section}="${idx}"]`).forEach(el => {
+      item[el.dataset.field] = el.value;
+    });
+    if (item.title || item.action) items.push(item);
+  });
+  return items;
+}
+
+function collectProjectSTAR() {
+  const projects = resumeData.projects;
+  const indices = new Set();
+  document.querySelectorAll('[data-project]').forEach(el => indices.add(el.dataset.project));
+  return Array.from(indices).map(idx => {
+    const p = {...projects[idx]};
+    document.querySelectorAll(`[data-project="${idx}"]`).forEach(el => {
+      if (el.dataset.field === 'name') p.name = el.value;
+      else if (['situation','task','action','result'].includes(el.dataset.field)) p[el.dataset.field] = el.value;
+    });
+    return p;
+  });
+}
+
+function removeSkill(i) {
+  resumeData.skills.splice(i, 1);
+  renderForm();
+}
+
+function addSkill() {
+  resumeData.skills.push('');
+  renderForm();
+}
+
+function removeInternship(i) {
+  resumeData.internship.achievements.splice(i, 1);
+  renderForm();
+}
+
+function addInternship() {
+  resumeData.internship.achievements.push({ title: '', situation: '', task: '', action: '', result: '' });
+  renderForm();
+}
+
+async function saveData() {
+  collectFormData();
+  const res = await fetch('/api/data', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({data: resumeData})
+  });
+  const result = await res.json();
+  if (result.status === 'ok') {
+    showToast('保存成功！');
+    updatePreview();
+  }
+}
+
+function showToast(msg) {
+  const toast = document.createElement('div');
+  toast.className = 'fixed bottom-6 right-6 bg-green-600 text-white px-6 py-3 rounded-lg shadow-lg text-sm font-medium z-50';
+  toast.textContent = msg;
+  document.body.appendChild(toast);
+  setTimeout(() => toast.remove(), 2000);
+}
+
+function updatePreview() {
+  const d = resumeData;
+  let html = `
+    <div class="text-center border-b pb-4">
+      <h3 class="text-xl font-bold serif">${d.personal_info.name}</h3>
+      <p class="text-blue-600 text-sm italic">"${d.personal_info.signature}"</p>
+      <p class="text-xs text-gray-500 mt-1">${d.personal_info.phone} | ${d.personal_info.email} | ${d.personal_info.location}</p>
+    </div>
+    <div>
+      <h4 class="font-bold text-sm text-gray-800 border-b pb-1 mb-2">教育背景</h4>
+      <p class="text-xs"><b>${d.education.graduate.school}</b> ${d.education.graduate.major}（${d.education.graduate.type}）${d.education.graduate.start}</p>
+      <p class="text-xs"><b>${d.education.undergraduate.school}</b> ${d.education.undergraduate.major} | 排名 ${d.education.undergraduate.rank} | GPA ${d.education.undergraduate.gpa}</p>
+    </div>`;
+
+  if (d.internship && d.internship.achievements.length) {
+    html += `<div><h4 class="font-bold text-sm text-gray-800 border-b pb-1 mb-2">实习经历</h4>`;
+    d.internship.achievements.forEach(a => {
+      html += `<div class="mb-2"><p class="font-medium text-xs">${a.title}</p>`;
+      if (a.result) html += `<p class="text-xs text-blue-600">${a.result}</p>`;
+      html += `</div>`;
+    });
+    html += `</div>`;
+  }
+
+  if (d.competitions && d.competitions.length) {
+    html += `<div><h4 class="font-bold text-sm text-gray-800 border-b pb-1 mb-2">竞赛获奖</h4><p class="text-xs">${d.competitions.slice(0,5).map(c=>`${c.name} ${c.award}`).join('、')}</p></div>`;
+  }
+
+  document.getElementById('preview-area').innerHTML = html;
+}
+
+// PDF Upload
+async function uploadPdf() {
+  const fileInput = document.getElementById('pdf-upload');
+  const statusEl = document.getElementById('upload-status');
+  const btn = document.getElementById('upload-btn');
+
+  if (!fileInput.files.length) { alert('请选择一个 PDF 文件'); return; }
+
+  btn.disabled = true;
+  btn.textContent = '提取中...';
+  statusEl.classList.remove('hidden');
+  statusEl.className = 'text-xs mt-2 text-blue-600';
+  statusEl.textContent = '正在解析 PDF...';
+
+  try {
+    const formData = new FormData();
+    formData.append('file', fileInput.files[0]);
+
+    const res = await fetch('/api/upload', { method: 'POST', body: formData });
+    const data = await res.json();
+
+    if (data.error) {
+      statusEl.className = 'text-xs mt-2 text-red-600';
+      statusEl.textContent = '解析失败: ' + data.error;
+    } else {
+      statusEl.className = 'text-xs mt-2 text-green-600';
+      statusEl.textContent = `成功提取 ${data.text.length} 字符。文本已提取到下方表单，请手动编辑整理。`;
+      // Show extracted text in a modal or alert for user to reference
+      alert('PDF 文本提取成功！请根据提取的文本内容手动编辑下方表单。\n\n提取的文本前 500 字：\n' + data.text.substring(0, 500));
+    }
+  } catch (e) {
+    statusEl.className = 'text-xs mt-2 text-red-600';
+    statusEl.textContent = '上传失败: ' + e.message;
+  }
+  btn.disabled = false;
+  btn.textContent = '导入';
+}
+
+// JD Tailor
+async function tailorResume() {
+  const jd = document.getElementById('jd-input').value.trim();
+  if (!jd) { alert('请先粘贴 JD'); return; }
+
+  const btn = document.getElementById('tailor-btn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="loading">AI 正在分析 JD 并定制简历...</span>';
+
+  try {
+    const res = await fetch('/api/tailor', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({jd_text: jd})
+    });
+
+    if (res.status === 401) {
+      const err = await res.json();
+      document.getElementById('tailor-content').innerHTML = `<p class="text-red-600 text-sm">${err.error}</p>`;
+      document.getElementById('tailor-result').classList.remove('hidden');
+      btn.disabled = false;
+      btn.textContent = 'AI 定制简历';
+      return;
+    }
+
+    tailoredData = await res.json();
+
+    if (tailoredData.error) {
+      document.getElementById('tailor-content').innerHTML = `<pre class="text-xs bg-red-50 p-3 rounded text-red-600">${tailoredData.raw}</pre>`;
+    } else {
+      let html = '<div class="space-y-3">';
+      if (tailoredData.internship && tailoredData.internship.achievements) {
+        html += '<h4 class="font-bold text-sm">定制后实习经历：</h4>';
+        tailoredData.internship.achievements.forEach((a,i) => {
+          html += `<div class="p-3 bg-blue-50 rounded"><p class="font-medium text-sm">${a.title||''}</p>`;
+          if (a.result) html += `<p class="text-xs text-blue-600 mt-1">结果: ${a.result}</p>`;
+          html += `</div>`;
+        });
+      }
+      html += '</div>';
+      document.getElementById('tailor-content').innerHTML = html;
+    }
+    document.getElementById('tailor-result').classList.remove('hidden');
+  } catch(e) {
+    alert('请求失败: ' + e.message);
+  }
+  btn.disabled = false;
+  btn.textContent = 'AI 定制简历';
+}
+
+function applyTailored() {
+  if (tailoredData && !tailoredData.error) {
+    resumeData = tailoredData;
+    renderForm();
+    showToast('已应用定制版本');
+  }
+  document.getElementById('tailor-result').classList.add('hidden');
+}
+
+// Questions
+async function genQuestions() {
+  const jd = document.getElementById('jd-input-q').value.trim();
+  if (!jd) { alert('请先粘贴 JD'); return; }
+
+  const btn = document.getElementById('questions-btn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="loading">AI 正在生成问题...</span>';
+
+  try {
+    const res = await fetch('/api/questions', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({jd_text: jd})
+    });
+
+    if (res.status === 401) {
+      const err = await res.json();
+      document.getElementById('questions-list').innerHTML = `<p class="text-red-600 text-sm">${err.error}</p>`;
+      document.getElementById('questions-result').classList.remove('hidden');
+      btn.disabled = false;
+      btn.textContent = '生成面试问题';
+      return;
+    }
+
+    const data = await res.json();
+
+    if (data.error) {
+      document.getElementById('questions-list').innerHTML = `<pre class="text-xs bg-red-50 p-3 rounded text-red-600">${data.raw}</pre>`;
+    } else {
+      let html = '';
+      const typeMap = {'技术':'type-tech','行为':'type-behavior','产品':'type-product','综合':'type-general'};
+      data.questions.forEach((q, i) => {
+        const typeClass = typeMap[q.type] || 'type-general';
+        html += `<div class="question-card pl-4 py-3 bg-amber-50/50 rounded-r-lg">
+          <div class="flex items-center gap-2 mb-1">
+            <span class="font-bold text-sm text-gray-800">Q${i+1}</span>
+            <span class="question-type ${typeClass}">${q.type}</span>
+          </div>
+          <p class="text-sm text-gray-700 mb-2">${q.question}</p>
+          <p class="text-xs text-gray-500"><span class="font-medium">考察点：</span>${q.focus}</p>
+        </div>`;
+      });
+      document.getElementById('questions-list').innerHTML = html;
+    }
+    document.getElementById('questions-result').classList.remove('hidden');
+  } catch(e) {
+    alert('请求失败: ' + e.message);
+  }
+  btn.disabled = false;
+  btn.textContent = '生成面试问题';
+}
+
+loadData();
+</script>
+</body>
+</html>

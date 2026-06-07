@@ -1,0 +1,44 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.egg-info/
+dist/
+build/
+*.egg
+
+# Virtual environments
+venv/
+.venv/
+env/
+
+# Environment & secrets
+.env
+.env.local
+*.key
+
+# Data files (user-specific)
+resume_data.json
+
+# Uploads
+uploads/
+*.pdf
+*.docx
+*.doc
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Node (if any frontend tooling)
+node_modules/
+
+# Logs
+*.log

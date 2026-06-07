@@ -1,0 +1,112 @@
+{
+  "personal_info": {
+    "name": "张三",
+    "phone": "138-0000-0000",
+    "email": "your.email@example.com",
+    "location": "城市",
+    "political": "政治面貌",
+    "signature": "一句话描述你的职业目标"
+  },
+  "education": {
+    "graduate": {
+      "school": "研究生学校（如有）",
+      "major": "专业",
+      "type": "推免/统考/保研",
+      "start": "入学时间"
+    },
+    "undergraduate": {
+      "school": "本科学校",
+      "major": "专业",
+      "type": "专业类型说明",
+      "start": "入学时间",
+      "rank": "专业排名（如 1/58）",
+      "gpa": "GPA（如 3.7/4.0）",
+      "score": "均分（如 90/100）"
+    }
+  },
+  "skills": [
+    "核心能力：根据你的实际技能填写",
+    "工具能力：常用工具列表",
+    "技术能力：编程语言、框架等",
+    "产品能力：产品相关能力"
+  ],
+  "internship": {
+    "company": "公司名称",
+    "department": "部门",
+    "position": "实习岗位",
+    "period": "202X年X月 - 202X年X月",
+    "location": "城市",
+    "achievements": [
+      {
+        "title": "实习经历标题（如：某某系统需求分析）",
+        "situation": "S-情境：当时面临的背景和问题是什么",
+        "task": "T-任务：你的目标和职责是什么",
+        "action": "A-行动：你具体做了什么，采取了什么方法",
+        "result": "R-结果：量化产出、效率提升、业务影响（尽量用数据支撑）"
+      }
+    ]
+  },
+  "product_cases": [
+    {
+      "name": "案例名称",
+      "role": "你的角色",
+      "items": [
+        { "title": "维度名称", "content": "具体内容描述" }
+      ]
+    }
+  ],
+  "projects": [
+    {
+      "name": "项目名称",
+      "type": "项目类型（如国家级大创、课程设计等）",
+      "role": "你的角色",
+      "status": "已结项/进行中",
+      "items": [
+        "项目成果描述1",
+        "项目成果描述2"
+      ]
+    }
+  ],
+  "competitions": [
+    {
+      "name": "竞赛名称",
+      "level": "国家级/省级/校级",
+      "award": "奖项",
+      "role": "队长/核心成员/个人",
+      "date": "202X年X月",
+      "descriptions": [
+        "竞赛背景与团队工作描述"
+      ]
+    }
+  ],
+  "publications": [
+    {
+      "title": "论文标题",
+      "type": "期刊/会议类型",
+      "role": "作者排名",
+      "status": "已发表/在审"
+    }
+  ],
+  "software_copyrights": [
+    {
+      "name": "软著名称",
+      "role": "著作权人排名",
+      "registration": "登记号"
+    }
+  ],
+  "awards": [
+    "奖学金/荣誉称号1",
+    "奖学金/荣誉称号2"
+  ],
+  "leadership": [
+    "学生组织任职经历"
+  ],
+  "volunteer": {
+    "hours": "志愿服务时长",
+    "award": "志愿活动荣誉（如无则删除）"
+  },
+  "self_evaluation": [
+    "自我评价1：突出你的核心优势",
+    "自我评价2：补充其他特点"
+  ]
+}
