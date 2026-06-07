@@ -141,11 +141,47 @@
         </div>
       </div>
 
+      <!-- Education -->
+      <div class="bg-white rounded-xl shadow-sm border p-6 mt-4">
+        <h2 class="text-lg font-bold text-gray-800 mb-4">教育背景</h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div class="border rounded-lg p-4 bg-blue-50/50">
+            <h3 class="text-sm font-bold text-gray-700 mb-3">本科</h3>
+            <div class="space-y-2">
+              <div><label class="text-xs text-gray-500">学校</label><input id="edu-ug-school" class="w-full mt-1 px-3 py-2 border rounded-lg text-sm"></div>
+              <div><label class="text-xs text-gray-500">专业</label><input id="edu-ug-major" class="w-full mt-1 px-3 py-2 border rounded-lg text-sm"></div>
+              <div><label class="text-xs text-gray-500">类型</label><input id="edu-ug-type" class="w-full mt-1 px-3 py-2 border rounded-lg text-sm"></div>
+              <div><label class="text-xs text-gray-500">入学时间</label><input id="edu-ug-start" class="w-full mt-1 px-3 py-2 border rounded-lg text-sm"></div>
+              <div><label class="text-xs text-gray-500">排名</label><input id="edu-ug-rank" class="w-full mt-1 px-3 py-2 border rounded-lg text-sm"></div>
+              <div><label class="text-xs text-gray-500">GPA</label><input id="edu-ug-gpa" class="w-full mt-1 px-3 py-2 border rounded-lg text-sm"></div>
+              <div><label class="text-xs text-gray-500">均分</label><input id="edu-ug-score" class="w-full mt-1 px-3 py-2 border rounded-lg text-sm"></div>
+            </div>
+          </div>
+          <div class="border rounded-lg p-4 bg-green-50/50">
+            <h3 class="text-sm font-bold text-gray-700 mb-3">研究生</h3>
+            <div class="space-y-2">
+              <div><label class="text-xs text-gray-500">学校</label><input id="edu-gr-school" class="w-full mt-1 px-3 py-2 border rounded-lg text-sm"></div>
+              <div><label class="text-xs text-gray-500">专业</label><input id="edu-gr-major" class="w-full mt-1 px-3 py-2 border rounded-lg text-sm"></div>
+              <div><label class="text-xs text-gray-500">类型</label><input id="edu-gr-type" class="w-full mt-1 px-3 py-2 border rounded-lg text-sm"></div>
+              <div><label class="text-xs text-gray-500">入学时间</label><input id="edu-gr-start" class="w-full mt-1 px-3 py-2 border rounded-lg text-sm"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <!-- Skills -->
       <div class="bg-white rounded-xl shadow-sm border p-6 mt-4">
         <h2 class="text-lg font-bold text-gray-800 mb-4">技能标签</h2>
         <div id="skills-list" class="space-y-2"></div>
         <button onclick="addSkill()" class="mt-3 text-sm text-blue-600 hover:text-blue-800 font-medium">+ 添加技能</button>
+      </div>
+
+      <!-- Product Cases -->
+      <div class="bg-white rounded-xl shadow-sm border p-6 mt-4">
+        <h2 class="text-lg font-bold text-gray-800 mb-1">产品案例</h2>
+        <p class="text-xs text-gray-400 mb-4">展示你的产品思维和项目管理能力</p>
+        <div id="product-cases-list" class="space-y-4"></div>
+        <button onclick="addProductCase()" class="mt-3 text-sm text-blue-600 hover:text-blue-800 font-medium">+ 添加案例</button>
       </div>
 
       <!-- Internship -->
@@ -161,6 +197,58 @@
         <h2 class="text-lg font-bold text-gray-800 mb-1">项目经历</h2>
         <p class="text-xs text-gray-400 mb-4">按 STAR 法则撰写</p>
         <div id="projects-list" class="space-y-4"></div>
+      </div>
+
+      <!-- Competitions -->
+      <div class="bg-white rounded-xl shadow-sm border p-6 mt-4">
+        <h2 class="text-lg font-bold text-gray-800 mb-1">竞赛奖项</h2>
+        <p class="text-xs text-gray-400 mb-4">展示你的竞赛成果</p>
+        <div id="competitions-list" class="space-y-4"></div>
+        <button onclick="addCompetition()" class="mt-3 text-sm text-blue-600 hover:text-blue-800 font-medium">+ 添加竞赛</button>
+      </div>
+
+      <!-- Publications -->
+      <div class="bg-white rounded-xl shadow-sm border p-6 mt-4">
+        <h2 class="text-lg font-bold text-gray-800 mb-1">论文发表</h2>
+        <div id="publications-list" class="space-y-4"></div>
+        <button onclick="addPublication()" class="mt-3 text-sm text-blue-600 hover:text-blue-800 font-medium">+ 添加论文</button>
+      </div>
+
+      <!-- Software Copyrights -->
+      <div class="bg-white rounded-xl shadow-sm border p-6 mt-4">
+        <h2 class="text-lg font-bold text-gray-800 mb-1">软件著作权</h2>
+        <div id="copyrights-list" class="space-y-4"></div>
+        <button onclick="addCopyright()" class="mt-3 text-sm text-blue-600 hover:text-blue-800 font-medium">+ 添加软著</button>
+      </div>
+
+      <!-- Awards -->
+      <div class="bg-white rounded-xl shadow-sm border p-6 mt-4">
+        <h2 class="text-lg font-bold text-gray-800 mb-1">荣誉奖项</h2>
+        <div id="awards-list" class="space-y-2"></div>
+        <button onclick="addAward()" class="mt-3 text-sm text-blue-600 hover:text-blue-800 font-medium">+ 添加荣誉</button>
+      </div>
+
+      <!-- Leadership -->
+      <div class="bg-white rounded-xl shadow-sm border p-6 mt-4">
+        <h2 class="text-lg font-bold text-gray-800 mb-1">组织领导力</h2>
+        <div id="leadership-list" class="space-y-2"></div>
+        <button onclick="addLeadership()" class="mt-3 text-sm text-blue-600 hover:text-blue-800 font-medium">+ 添加经历</button>
+      </div>
+
+      <!-- Volunteer -->
+      <div class="bg-white rounded-xl shadow-sm border p-6 mt-4">
+        <h2 class="text-lg font-bold text-gray-800 mb-1">志愿服务</h2>
+        <div class="grid grid-cols-2 gap-4">
+          <div><label class="text-xs text-gray-500">志愿时长</label><input id="volunteer-hours" class="w-full mt-1 px-3 py-2 border rounded-lg text-sm"></div>
+          <div><label class="text-xs text-gray-500">志愿荣誉</label><input id="volunteer-award" class="w-full mt-1 px-3 py-2 border rounded-lg text-sm"></div>
+        </div>
+      </div>
+
+      <!-- Self Evaluation -->
+      <div class="bg-white rounded-xl shadow-sm border p-6 mt-4">
+        <h2 class="text-lg font-bold text-gray-800 mb-1">自我评价</h2>
+        <div id="self-eval-list" class="space-y-2"></div>
+        <button onclick="addSelfEval()" class="mt-3 text-sm text-blue-600 hover:text-blue-800 font-medium">+ 添加评价</button>
       </div>
 
       <!-- Save -->
@@ -367,7 +455,7 @@ function showParsePreview(data) {
   const summary = document.getElementById('parse-summary');
   preview.classList.remove('hidden');
 
-  let html = '';
+  let html = '<div class="grid grid-cols-2 gap-x-4 gap-y-1">';
   // Personal info
   if (data.personal_info && data.personal_info.name) {
     html += `<p><b>姓名:</b> ${data.personal_info.name}</p>`;
@@ -378,6 +466,9 @@ function showParsePreview(data) {
   if (data.personal_info && data.personal_info.email) {
     html += `<p><b>邮箱:</b> ${data.personal_info.email}</p>`;
   }
+  if (data.personal_info && data.personal_info.location) {
+    html += `<p><b>籍贯:</b> ${data.personal_info.location}</p>`;
+  }
 
   // Education
   if (data.education) {
@@ -385,6 +476,9 @@ function showParsePreview(data) {
     const undergrad = data.education.undergraduate || {};
     if (grad.school) html += `<p><b>研究生:</b> ${grad.school} - ${grad.major} (${grad.start})</p>`;
     if (undergrad.school) html += `<p><b>本科:</b> ${undergrad.school} - ${undergrad.major} (${undergrad.start})</p>`;
+    if (undergrad.rank) html += `<p><b>排名:</b> ${undergrad.rank}</p>`;
+    if (undergrad.gpa) html += `<p><b>GPA:</b> ${undergrad.gpa}</p>`;
+    if (undergrad.score) html += `<p><b>均分:</b> ${undergrad.score}</p>`;
   }
 
   // Skills
@@ -392,8 +486,13 @@ function showParsePreview(data) {
     html += `<p><b>技能:</b> ${data.skills.length} 项</p>`;
   }
 
+  // Product Cases
+  if (data.product_cases && data.product_cases.length) {
+    html += `<p><b>产品案例:</b> ${data.product_cases.length} 个</p>`;
+  }
+
   // Internship
-  if (data.internship && data.internship.achievements) {
+  if (data.internship && data.internship.achievements && data.internship.achievements.length) {
     html += `<p><b>实习经历:</b> ${data.internship.achievements.length} 段</p>`;
   }
 
@@ -412,11 +511,32 @@ function showParsePreview(data) {
     html += `<p><b>论文发表:</b> ${data.publications.length} 篇</p>`;
   }
 
-  // Awards
-  if (data.awards && data.awards.length) {
-    html += `<p><b>荣誉:</b> ${data.awards.length} 项</p>`;
+  // Software Copyrights
+  if (data.software_copyrights && data.software_copyrights.length) {
+    html += `<p><b>软件著作权:</b> ${data.software_copyrights.length} 项</p>`;
   }
 
+  // Awards
+  if (data.awards && data.awards.length) {
+    html += `<p><b>荣誉奖项:</b> ${data.awards.length} 项</p>`;
+  }
+
+  // Leadership
+  if (data.leadership && data.leadership.length) {
+    html += `<p><b>组织领导力:</b> ${data.leadership.length} 项</p>`;
+  }
+
+  // Volunteer
+  if (data.volunteer && data.volunteer.hours) {
+    html += `<p><b>志愿服务:</b> ${data.volunteer.hours}</p>`;
+  }
+
+  // Self Evaluation
+  if (data.self_evaluation && data.self_evaluation.length) {
+    html += `<p><b>自我评价:</b> ${data.self_evaluation.length} 条</p>`;
+  }
+
+  html += '</div>';
   summary.innerHTML = html || '<p class="text-gray-500">未能提取到有效信息，请检查 PDF 内容</p>';
 }
 
@@ -508,35 +628,169 @@ function switchTab(tab) {
 
 function renderForm() {
   var d = resumeData.personal_info;
-  document.getElementById('name').value = d.name;
-  document.getElementById('phone').value = d.phone;
-  document.getElementById('email').value = d.email;
-  document.getElementById('location').value = d.location;
+  document.getElementById('name').value = d.name || '';
+  document.getElementById('phone').value = d.phone || '';
+  document.getElementById('email').value = d.email || '';
+  document.getElementById('location').value = d.location || '';
   document.getElementById('signature').value = d.signature || '';
+
+  // Education
+  var edu = resumeData.education || {};
+  var ug = edu.undergraduate || {};
+  var gr = edu.graduate || {};
+  document.getElementById('edu-ug-school').value = ug.school || '';
+  document.getElementById('edu-ug-major').value = ug.major || '';
+  document.getElementById('edu-ug-type').value = ug.type || '';
+  document.getElementById('edu-ug-start').value = ug.start || '';
+  document.getElementById('edu-ug-rank').value = ug.rank || '';
+  document.getElementById('edu-ug-gpa').value = ug.gpa || '';
+  document.getElementById('edu-ug-score').value = ug.score || '';
+  document.getElementById('edu-gr-school').value = gr.school || '';
+  document.getElementById('edu-gr-major').value = gr.major || '';
+  document.getElementById('edu-gr-type').value = gr.type || '';
+  document.getElementById('edu-gr-start').value = gr.start || '';
 
   // Skills
   var skillsEl = document.getElementById('skills-list');
   skillsEl.innerHTML = '';
-  resumeData.skills.forEach(function(s, i) {
+  (resumeData.skills || []).forEach(function(s, i) {
     skillsEl.innerHTML += '<div class="flex gap-2"><input value="' + s.replace(/"/g, '&quot;') + '" data-skill="' + i + '" class="flex-1 px-3 py-2 border rounded-lg text-sm"><button onclick="removeSkill(' + i + ')" class="text-red-400 hover:text-red-600 text-sm px-2">&times;</button></div>';
+  });
+
+  // Product Cases
+  var pcEl = document.getElementById('product-cases-list');
+  pcEl.innerHTML = '';
+  (resumeData.product_cases || []).forEach(function(c, i) {
+    pcEl.innerHTML += renderProductCase(i, c);
   });
 
   // Internship (STAR)
   var intEl = document.getElementById('internship-list');
   intEl.innerHTML = '';
-  resumeData.internship.achievements.forEach(function(a, i) {
+  (resumeData.internship.achievements || []).forEach(function(a, i) {
     intEl.innerHTML += renderSTAR('internship', i, a);
   });
 
   // Projects (STAR)
   var projEl = document.getElementById('projects-list');
   projEl.innerHTML = '';
-  resumeData.projects.forEach(function(p, i) {
+  (resumeData.projects || []).forEach(function(p, i) {
     projEl.innerHTML += renderProjectSTAR(i, p);
+  });
+
+  // Competitions
+  var compEl = document.getElementById('competitions-list');
+  compEl.innerHTML = '';
+  (resumeData.competitions || []).forEach(function(c, i) {
+    compEl.innerHTML += renderCompetition(i, c);
+  });
+
+  // Publications
+  var pubEl = document.getElementById('publications-list');
+  pubEl.innerHTML = '';
+  (resumeData.publications || []).forEach(function(p, i) {
+    pubEl.innerHTML += renderPublication(i, p);
+  });
+
+  // Software Copyrights
+  var crEl = document.getElementById('copyrights-list');
+  crEl.innerHTML = '';
+  (resumeData.software_copyrights || []).forEach(function(c, i) {
+    crEl.innerHTML += renderCopyright(i, c);
+  });
+
+  // Awards
+  var awEl = document.getElementById('awards-list');
+  awEl.innerHTML = '';
+  (resumeData.awards || []).forEach(function(a, i) {
+    awEl.innerHTML += '<div class="flex gap-2"><input value="' + a.replace(/"/g, '&quot;') + '" data-award="' + i + '" class="flex-1 px-3 py-2 border rounded-lg text-sm"><button onclick="removeAward(' + i + ')" class="text-red-400 hover:text-red-600 text-sm px-2">&times;</button></div>';
+  });
+
+  // Leadership
+  var ldEl = document.getElementById('leadership-list');
+  ldEl.innerHTML = '';
+  (resumeData.leadership || []).forEach(function(l, i) {
+    ldEl.innerHTML += '<div class="flex gap-2"><input value="' + l.replace(/"/g, '&quot;') + '" data-leadership="' + i + '" class="flex-1 px-3 py-2 border rounded-lg text-sm"><button onclick="removeLeadership(' + i + ')" class="text-red-400 hover:text-red-600 text-sm px-2">&times;</button></div>';
+  });
+
+  // Volunteer
+  var vol = resumeData.volunteer || {};
+  document.getElementById('volunteer-hours').value = vol.hours || '';
+  document.getElementById('volunteer-award').value = vol.award || '';
+
+  // Self Evaluation
+  var seEl = document.getElementById('self-eval-list');
+  seEl.innerHTML = '';
+  (resumeData.self_evaluation || []).forEach(function(s, i) {
+    seEl.innerHTML += '<div class="flex gap-2"><textarea rows="2" data-self-eval="' + i + '" class="flex-1 px-3 py-2 border rounded-lg text-sm resize-none">' + s.replace(/</g, '&lt;') + '</textarea><button onclick="removeSelfEval(' + i + ')" class="text-red-400 hover:text-red-600 text-sm px-2 self-start">&times;</button></div>';
   });
 
   // Bind real-time preview listeners
   bindPreviewListeners();
+}
+
+function renderProductCase(idx, c) {
+  var html = '<div class="border rounded-lg p-4 bg-gray-50/50 section-card">' +
+    '<div class="flex items-center justify-between mb-2">' +
+    '<input value="' + (c.name||'').replace(/"/g, '&quot;') + '" data-pc="' + idx + '" data-field="name" class="flex-1 mr-3 px-3 py-1.5 border rounded text-sm font-medium" placeholder="产品名称">' +
+    '<button onclick="removeProductCase(' + idx + ')" class="text-red-400 hover:text-red-600 text-sm px-2">&times;</button></div>' +
+    '<div class="grid grid-cols-2 gap-2 mb-2">' +
+    '<input value="' + (c.role||'').replace(/"/g, '&quot;') + '" data-pc="' + idx + '" data-field="role" class="px-3 py-1.5 border rounded text-sm" placeholder="担任角色">' +
+    '</div>';
+  (c.items || []).forEach(function(item, ii) {
+    html += '<div class="grid grid-cols-2 gap-2 mb-1">' +
+      '<input value="' + (item.title||'').replace(/"/g, '&quot;') + '" data-pc-item="' + idx + ',' + ii + '" data-field="title" class="px-3 py-1 border rounded text-xs" placeholder="小标题">' +
+      '<input value="' + (item.content||'').replace(/"/g, '&quot;') + '" data-pc-item="' + idx + ',' + ii + '" data-field="content" class="px-3 py-1 border rounded text-xs" placeholder="内容">' +
+      '</div>';
+  });
+  html += '<button onclick="addPCItem(' + idx + ')" class="text-xs text-blue-500 mt-1">+ 添加条目</button></div>';
+  return html;
+}
+
+function renderCompetition(idx, c) {
+  return (
+    '<div class="border rounded-lg p-4 bg-gray-50/50 section-card">' +
+    '<div class="flex items-center justify-between mb-2">' +
+    '<input value="' + (c.name||'').replace(/"/g, '&quot;') + '" data-competition="' + idx + '" data-field="name" class="flex-1 mr-3 px-3 py-1.5 border rounded text-sm font-medium" placeholder="竞赛名称">' +
+    '<button onclick="removeCompetition(' + idx + ')" class="text-red-400 hover:text-red-600 text-sm px-2">&times;</button></div>' +
+    '<div class="grid grid-cols-3 gap-2 mb-2">' +
+    '<input value="' + (c.level||'').replace(/"/g, '&quot;') + '" data-competition="' + idx + '" data-field="level" class="px-3 py-1.5 border rounded text-sm" placeholder="级别（国家级/省级）">' +
+    '<input value="' + (c.award||'').replace(/"/g, '&quot;') + '" data-competition="' + idx + '" data-field="award" class="px-3 py-1.5 border rounded text-sm" placeholder="奖项">' +
+    '<input value="' + (c.date||'').replace(/"/g, '&quot;') + '" data-competition="' + idx + '" data-field="date" class="px-3 py-1.5 border rounded text-sm" placeholder="日期">' +
+    '</div>' +
+    '<div class="mb-1">' +
+    '<input value="' + (c.role||'').replace(/"/g, '&quot;') + '" data-competition="' + idx + '" data-field="role" class="px-3 py-1.5 border rounded text-sm" placeholder="角色（队长/核心成员等）">' +
+    '</div>' +
+    '<div>' +
+    '<textarea data-competition="' + idx + '" data-field="desc" rows="2" class="w-full px-3 py-2 border rounded-lg text-xs resize-none" placeholder="竞赛描述（每行一条）">' + ((c.descriptions||[]).join('\n')) + '</textarea>' +
+    '</div></div>'
+  );
+}
+
+function renderPublication(idx, p) {
+  return (
+    '<div class="border rounded-lg p-4 bg-gray-50/50 section-card">' +
+    '<div class="flex items-center justify-between mb-2">' +
+    '<input value="' + (p.title||'').replace(/"/g, '&quot;') + '" data-publication="' + idx + '" data-field="title" class="flex-1 mr-3 px-3 py-1.5 border rounded text-sm font-medium" placeholder="论文标题">' +
+    '<button onclick="removePublication(' + idx + ')" class="text-red-400 hover:text-red-600 text-sm px-2">&times;</button></div>' +
+    '<div class="grid grid-cols-3 gap-2">' +
+    '<input value="' + (p.type||'').replace(/"/g, '&quot;') + '" data-publication="' + idx + '" data-field="type" class="px-3 py-1.5 border rounded text-sm" placeholder="类型（CSSCI/SCI等）">' +
+    '<input value="' + (p.role||'').replace(/"/g, '&quot;') + '" data-publication="' + idx + '" data-field="role" class="px-3 py-1.5 border rounded text-sm" placeholder="作者顺序">' +
+    '<input value="' + (p.status||'').replace(/"/g, '&quot;') + '" data-publication="' + idx + '" data-field="status" class="px-3 py-1.5 border rounded text-sm" placeholder="状态（见刊/在审）">' +
+    '</div></div>'
+  );
+}
+
+function renderCopyright(idx, c) {
+  return (
+    '<div class="border rounded-lg p-3 bg-gray-50/50 section-card">' +
+    '<div class="flex items-center gap-2">' +
+    '<input value="' + (c.name||'').replace(/"/g, '&quot;') + '" data-copyright="' + idx + '" data-field="name" class="flex-1 px-3 py-1.5 border rounded text-sm" placeholder="软著名称">' +
+    '<input value="' + (c.role||'').replace(/"/g, '&quot;') + '" data-copyright="' + idx + '" data-field="role" class="px-3 py-1.5 border rounded text-sm" placeholder="角色">' +
+    '<input value="' + (c.registration||'').replace(/"/g, '&quot;') + '" data-copyright="' + idx + '" data-field="registration" class="px-3 py-1.5 border rounded text-sm" placeholder="登记号">' +
+    '<button onclick="removeCopyright(' + idx + ')" class="text-red-400 hover:text-red-600 text-sm px-2">&times;</button>' +
+    '</div></div>'
+  );
 }
 
 function renderSTAR(section, idx, item) {
@@ -578,14 +832,72 @@ function collectFormData() {
   resumeData.personal_info.location = document.getElementById('location').value;
   resumeData.personal_info.signature = document.getElementById('signature').value;
 
+  // Education
+  if (!resumeData.education) resumeData.education = { undergraduate: {}, graduate: {} };
+  if (!resumeData.education.undergraduate) resumeData.education.undergraduate = {};
+  if (!resumeData.education.graduate) resumeData.education.graduate = {};
+  resumeData.education.undergraduate.school = document.getElementById('edu-ug-school').value;
+  resumeData.education.undergraduate.major = document.getElementById('edu-ug-major').value;
+  resumeData.education.undergraduate.type = document.getElementById('edu-ug-type').value;
+  resumeData.education.undergraduate.start = document.getElementById('edu-ug-start').value;
+  resumeData.education.undergraduate.rank = document.getElementById('edu-ug-rank').value;
+  resumeData.education.undergraduate.gpa = document.getElementById('edu-ug-gpa').value;
+  resumeData.education.undergraduate.score = document.getElementById('edu-ug-score').value;
+  resumeData.education.graduate.school = document.getElementById('edu-gr-school').value;
+  resumeData.education.graduate.major = document.getElementById('edu-gr-major').value;
+  resumeData.education.graduate.type = document.getElementById('edu-gr-type').value;
+  resumeData.education.graduate.start = document.getElementById('edu-gr-start').value;
+
+  // Skills
   resumeData.skills = [];
   document.querySelectorAll('[data-skill]').forEach(function(el) {
     resumeData.skills[el.dataset.skill] = el.value;
   });
   resumeData.skills = resumeData.skills.filter(function(s) { return s; });
 
+  // Product Cases
+  collectProductCases();
+
+  // Internship
   resumeData.internship.achievements = collectSTAR('internship');
+
+  // Projects
   resumeData.projects = collectProjectSTAR();
+
+  // Competitions
+  collectCompetitions();
+
+  // Publications
+  collectPublications();
+
+  // Software Copyrights
+  collectCopyrights();
+
+  // Awards
+  resumeData.awards = [];
+  document.querySelectorAll('[data-award]').forEach(function(el) {
+    resumeData.awards[el.dataset.award] = el.value;
+  });
+  resumeData.awards = resumeData.awards.filter(function(a) { return a; });
+
+  // Leadership
+  resumeData.leadership = [];
+  document.querySelectorAll('[data-leadership]').forEach(function(el) {
+    resumeData.leadership[el.dataset.leadership] = el.value;
+  });
+  resumeData.leadership = resumeData.leadership.filter(function(l) { return l; });
+
+  // Volunteer
+  if (!resumeData.volunteer) resumeData.volunteer = {};
+  resumeData.volunteer.hours = document.getElementById('volunteer-hours').value;
+  resumeData.volunteer.award = document.getElementById('volunteer-award').value;
+
+  // Self Evaluation
+  resumeData.self_evaluation = [];
+  document.querySelectorAll('[data-self-eval]').forEach(function(el) {
+    resumeData.self_evaluation[el.dataset.selfEval] = el.value;
+  });
+  resumeData.self_evaluation = resumeData.self_evaluation.filter(function(s) { return s; });
 }
 
 function collectSTAR(section) {
@@ -640,6 +952,105 @@ function addInternship() {
   debouncedPreview();
 }
 
+// Product Cases
+function collectProductCases() {
+  resumeData.product_cases = [];
+  var indices = new Set();
+  document.querySelectorAll('[data-pc]').forEach(function(el) { indices.add(parseInt(el.dataset.pc)); });
+  indices.forEach(function(idx) {
+    var c = Object.assign({}, (resumeData.product_cases || [])[idx] || {});
+    document.querySelectorAll('[data-pc="' + idx + '"]').forEach(function(el) {
+      if (el.dataset.field === 'name') c.name = el.value;
+      if (el.dataset.field === 'role') c.role = el.value;
+    });
+    c.items = [];
+    var itemIndices = {};
+    document.querySelectorAll('[data-pc-item="' + idx + ',"]').forEach(function(el) {
+      var parts = el.dataset.pcItem.split(',');
+      var ii = parseInt(parts[1]);
+      if (!c.items[ii]) c.items[ii] = { title: '', content: '' };
+      if (el.dataset.field === 'title') c.items[ii].title = el.value;
+      if (el.dataset.field === 'content') c.items[ii].content = el.value;
+    });
+    c.items = c.items.filter(function(item) { return item && (item.title || item.content); });
+    resumeData.product_cases.push(c);
+  });
+}
+function addProductCase() { resumeData.product_cases.push({ name: '', role: '', items: [] }); renderForm(); debouncedPreview(); }
+function removeProductCase(i) { resumeData.product_cases.splice(i, 1); renderForm(); debouncedPreview(); }
+function addPCItem(idx) { resumeData.product_cases[idx].items.push({ title: '', content: '' }); renderForm(); }
+
+// Competitions
+function collectCompetitions() {
+  resumeData.competitions = [];
+  var indices = new Set();
+  document.querySelectorAll('[data-competition]').forEach(function(el) { indices.add(parseInt(el.dataset.competition)); });
+  indices.forEach(function(idx) {
+    var c = Object.assign({}, (resumeData.competitions || [])[idx] || {});
+    document.querySelectorAll('[data-competition="' + idx + '"]').forEach(function(el) {
+      var f = el.dataset.field;
+      if (f === 'name') c.name = el.value;
+      else if (f === 'level') c.level = el.value;
+      else if (f === 'award') c.award = el.value;
+      else if (f === 'role') c.role = el.value;
+      else if (f === 'date') c.date = el.value;
+      else if (f === 'desc') c.descriptions = el.value.split('\n').filter(function(d) { return d.trim(); });
+    });
+    resumeData.competitions.push(c);
+  });
+}
+function addCompetition() { resumeData.competitions.push({ name: '', level: '', award: '', role: '', date: '', descriptions: [] }); renderForm(); debouncedPreview(); }
+function removeCompetition(i) { resumeData.competitions.splice(i, 1); renderForm(); debouncedPreview(); }
+
+// Publications
+function collectPublications() {
+  resumeData.publications = [];
+  var indices = new Set();
+  document.querySelectorAll('[data-publication]').forEach(function(el) { indices.add(parseInt(el.dataset.publication)); });
+  indices.forEach(function(idx) {
+    var p = {};
+    document.querySelectorAll('[data-publication="' + idx + '"]').forEach(function(el) {
+      if (el.dataset.field === 'title') p.title = el.value;
+      else if (el.dataset.field === 'type') p.type = el.value;
+      else if (el.dataset.field === 'role') p.role = el.value;
+      else if (el.dataset.field === 'status') p.status = el.value;
+    });
+    resumeData.publications.push(p);
+  });
+}
+function addPublication() { resumeData.publications.push({ title: '', type: '', role: '', status: '' }); renderForm(); debouncedPreview(); }
+function removePublication(i) { resumeData.publications.splice(i, 1); renderForm(); debouncedPreview(); }
+
+// Software Copyrights
+function collectCopyrights() {
+  resumeData.software_copyrights = [];
+  var indices = new Set();
+  document.querySelectorAll('[data-copyright]').forEach(function(el) { indices.add(parseInt(el.dataset.copyright)); });
+  indices.forEach(function(idx) {
+    var c = {};
+    document.querySelectorAll('[data-copyright="' + idx + '"]').forEach(function(el) {
+      if (el.dataset.field === 'name') c.name = el.value;
+      else if (el.dataset.field === 'role') c.role = el.value;
+      else if (el.dataset.field === 'registration') c.registration = el.value;
+    });
+    resumeData.software_copyrights.push(c);
+  });
+}
+function addCopyright() { resumeData.software_copyrights.push({ name: '', role: '', registration: '' }); renderForm(); debouncedPreview(); }
+function removeCopyright(i) { resumeData.software_copyrights.splice(i, 1); renderForm(); debouncedPreview(); }
+
+// Awards
+function addAward() { resumeData.awards.push(''); renderForm(); debouncedPreview(); }
+function removeAward(i) { resumeData.awards.splice(i, 1); renderForm(); debouncedPreview(); }
+
+// Leadership
+function addLeadership() { resumeData.leadership.push(''); renderForm(); debouncedPreview(); }
+function removeLeadership(i) { resumeData.leadership.splice(i, 1); renderForm(); debouncedPreview(); }
+
+// Self Evaluation
+function addSelfEval() { resumeData.self_evaluation.push(''); renderForm(); debouncedPreview(); }
+function removeSelfEval(i) { resumeData.self_evaluation.splice(i, 1); renderForm(); debouncedPreview(); }
+
 async function saveData() {
   collectFormData();
   var btn = document.getElementById('save-btn');
@@ -679,7 +1090,14 @@ function debouncedPreview() {
 }
 
 function bindPreviewListeners() {
-  var inputs = document.querySelectorAll('#name, #phone, #email, #location, #signature, [data-skill], [data-internship], [data-project]');
+  var selectors = '#name, #phone, #email, #location, #signature, ' +
+    '[data-skill], [data-internship], [data-project], [data-pc], [data-pc-item], ' +
+    '[data-competition], [data-publication], [data-copyright], ' +
+    '[data-award], [data-leadership], [data-self-eval], ' +
+    '#edu-ug-school, #edu-ug-major, #edu-ug-type, #edu-ug-start, #edu-ug-rank, #edu-ug-gpa, #edu-ug-score, ' +
+    '#edu-gr-school, #edu-gr-major, #edu-gr-type, #edu-gr-start, ' +
+    '#volunteer-hours, #volunteer-award';
+  var inputs = document.querySelectorAll(selectors);
   inputs.forEach(function(el) {
     el.removeEventListener('input', debouncedPreview);
     el.addEventListener('input', debouncedPreview);
